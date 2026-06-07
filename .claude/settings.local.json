@@ -4,7 +4,11 @@
       "PowerShell(Get-ChildItem -Path \"d:\\\\proyectos\\\\TecsisAi\" -Recurse -Force | Select-Object -Property FullName, @{Name=\"Type\"; Expression={if \\($_.PSIsContainer\\) {\"DIR\"} else {\"FILE\"}}} | Sort-Object FullName)",
       "Bash(tree -L 3 \"d:\\\\proyectos\\\\TecsisAi\" 2>nul || find \"d:\\\\proyectos\\\\TecsisAi\" -maxdepth 3 -type d | head -100)",
       "Bash(grep -E \"\\\\.\\(py|json|js|tsx|ts|yaml|yml|md|txt|env|requirements|package\\)$\")",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\proyectos\\\\TecsisAi\" -Recurse -Depth 2 | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\"d:\\\\proyectos\\\\TecsisAi\\\\\", \"\"\\) } | Sort-Object | Select-Object -First 150)",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\proyectos\\\\TecsisAi\\\\Frontend\\\\frontend_admin\\\\src\" -Recurse | Select-Object Name, @{Name=\"Size\";Expression={if\\($_.PSIsContainer\\){\"-\"}else{$_.Length}}} | Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\proyectos\\\\TecsisAi\\\\Backend\" -Exclude venv -Recurse -File | Select-Object Name, @{Name=\"Size\\(bytes\\)\";Expression={$_.Length}}, @{Name=\"Extension\";Expression={$_.Extension}} | Sort-Object Name)",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\proyectos\\\\TecsisAi\\\\Frontend\\\\frontend_admin\" -Exclude node_modules -Recurse -File | Select-Object Name, @{Name=\"Size\\(bytes\\)\";Expression={$_.Length}}, @{Name=\"Extension\";Expression={$_.Extension}} | Sort-Object Name)"
     ],
     "additionalDirectories": [
       "d:\\proyectos\\TecsisAi"

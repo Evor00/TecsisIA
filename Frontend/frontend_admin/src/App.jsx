@@ -205,6 +205,11 @@ function HistorialView() {
     r.titulo.toLowerCase().includes(search.toLowerCase())
   )
 
+  const alertas   = data.filter(r => r.estado === 'alta-similitud').length
+  const avgTokens = data.length
+    ? Math.round(data.reduce((s, r) => s + (r.tokens || 0), 0) / data.length).toLocaleString('es-PE')
+    : '—'
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <PageBreadcrumb icon={History} label="Historial de Análisis" />
@@ -215,7 +220,7 @@ function HistorialView() {
           <div>
             <h1 className="text-xl font-bold text-white">Historial de Análisis</h1>
             <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-              {HISTORIAL_DATA.length} consultas RAG registradas
+              {data.length} consultas RAG registradas
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -237,9 +242,9 @@ function HistorialView() {
         {/* Mini stats */}
         <div className="grid grid-cols-3 gap-4 mb-5">
           {[
-            { value: '7',     label: 'Consultas este mes', color: '#818cf8' },
-            { value: '1',     label: 'Alertas de similitud', color: '#fb923c' },
-            { value: '1.124', label: 'Promedio de tokens',  color: '#4ade80' },
+            { value: data.length, label: 'Consultas este mes', color: '#818cf8' },
+            { value: alertas,     label: 'Alertas de similitud', color: '#fb923c' },
+            { value: avgTokens,   label: 'Promedio de tokens',  color: '#4ade80' },
           ].map(({ value, label, color }) => (
             <div key={label} className="rounded-xl px-5 py-4"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -498,17 +503,73 @@ function ProyectosView() {
 
 // ─── VIEW: PERFIL ─────────────────────────────────────────────────────────────
 
+const PERFIL_FALLBACK = {
+  nombre: 'Jaime Gomez Quispe',
+  correo: 'j.gomez@tecsis.edu.pe',
+  departamento: 'Ing. de Software',
+  codigo: 'DOC-2024-047',
+  rol: 'docente',
+  bio: 'Docente de la carrera de Diseño y Desarrollo de Software con especialización en arquitectura de sistemas distribuidos y análisis semántico de documentos académicos.',
+  stats: { consultas_rag: 0, proyectos_revisados: 0, alertas_emitidas: 0, tesis_indexadas: 0 },
+}
+
 function PerfilView() {
   const [activeTab, setActiveTab] = useState('info')
-  const [form, setForm] = useState({
-    nombre: 'Jaime Gomez Quispe',
-    correo: 'j.gomez@tecsis.edu.pe',
-    telefono: '+51 987 654 321',
-    departamento: 'Ing. de Software',
-    codigo: 'DOC-2024-047',
-    rol: 'Docente / Administrador',
-    bio: 'Docente de la carrera de Diseño y Desarrollo de Software con especialización en arquitectura de sistemas distribuidos y análisis semántico de documentos académicos.',
-  })
+  const [form, setForm]           = useState(PERFIL_FALLBACK)
+  const [original, setOriginal]   = useState(PERFIL_FALLBACK)
+  const [stats, setStats]         = useState(PERFIL_FALLBACK.stats)
+  const [saving, setSaving]       = useState(false)
+  const [toast, setToast]         = useState(null) // { type: 'ok'|'err', msg }
+
+  useEffect(() => {
+    fetch('/api/perfil/')
+      .then(r => { if (!r.ok) throw new Error(); return r.json() })
+      .then(d => {
+        const { stats: s, ...fields } = d
+        setForm(fields)
+        setOriginal(fields)
+        if (s) setStats(s)
+      })
+      .catch(() => {})
+  }, [])
+
+  const showToast = (type, msg) => {
+    setToast({ type, msg })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/perfil/', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre:       form.nombre,
+          correo:       form.correo,
+          departamento: form.departamento,
+          bio:          form.bio,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      const d = await res.json()
+      const { stats: s, ...fields } = d
+      setForm(fields)
+      setOriginal(fields)
+      if (s) setStats(s)
+      showToast('ok', 'Cambios guardados correctamente')
+    } catch {
+      showToast('err', 'No se pudo guardar. Verifica la conexión.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancel = () => setForm(original)
+
+  const initials = form.nombre
+    ? form.nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+    : 'JG'
 
   const subTabs = [
     { id: 'info',  label: 'Información Personal', icon: User },
@@ -518,16 +579,29 @@ function PerfilView() {
     { id: 'sys',   label: 'Sistema',               icon: Globe },
   ]
 
-  const stats = [
-    { value: 47, label: 'Consultas RAG',      color: '#818cf8', icon: TrendingUp },
-    { value: 23, label: 'Proyectos revisados', color: '#4ade80', icon: FolderOpen },
-    { value: 8,  label: 'Alertas emitidas',   color: '#fbbf24', icon: Bell },
-    { value: 70, label: 'Tesis indexadas',    color: '#a78bfa', icon: BookMarked },
+  const statCards = [
+    { value: stats.consultas_rag,       label: 'Consultas RAG',      color: '#818cf8', icon: TrendingUp },
+    { value: stats.proyectos_revisados, label: 'Proyectos revisados', color: '#4ade80', icon: FolderOpen },
+    { value: stats.alertas_emitidas,   label: 'Alertas emitidas',   color: '#fbbf24', icon: Bell },
+    { value: stats.tesis_indexadas,    label: 'Tesis indexadas',    color: '#a78bfa', icon: BookMarked },
   ]
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <PageBreadcrumb icon={User} label="Perfil" />
+
+      {/* Toast */}
+      {toast && (
+        <div className="absolute top-4 right-4 z-50 flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl shadow-lg"
+          style={{
+            background: toast.type === 'ok' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+            border: `1px solid ${toast.type === 'ok' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+            color: toast.type === 'ok' ? '#4ade80' : '#f87171',
+          }}>
+          {toast.type === 'ok' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+          {toast.msg}
+        </div>
+      )}
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left panel */}
@@ -537,10 +611,10 @@ function PerfilView() {
           <div className="rounded-xl p-5 flex flex-col items-center gap-2 text-center"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold"
-              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>JG</div>
+              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>{initials}</div>
             <div>
-              <div className="font-semibold text-white text-sm">Prof. Jaime Gomez</div>
-              <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Docente / Administrador</div>
+              <div className="font-semibold text-white text-sm">{form.nombre}</div>
+              <div className="text-xs mt-0.5 capitalize" style={{ color: 'rgba(255,255,255,0.4)' }}>{form.rol}</div>
             </div>
             <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full"
               style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80' }}>
@@ -551,7 +625,7 @@ function PerfilView() {
 
           {/* Stats grid */}
           <div className="grid grid-cols-2 gap-2">
-            {stats.map(({ value, label, color, icon: Icon }) => (
+            {statCards.map(({ value, label, color, icon: Icon }) => (
               <div key={label} className="rounded-lg p-3"
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div className="flex items-center gap-1 mb-1">
@@ -594,12 +668,11 @@ function PerfilView() {
               <h2 className="text-sm font-semibold text-white mb-5">Información Personal</h2>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { label: 'Nombre completo',     key: 'nombre',      icon: User,      readOnly: false },
-                  { label: 'Correo institucional', key: 'correo',      icon: Globe,     readOnly: false },
-                  { label: 'Teléfono',            key: 'telefono',    icon: Bell,      readOnly: false },
-                  { label: 'Departamento',        key: 'departamento', icon: FolderOpen, readOnly: false },
-                  { label: 'Código docente',      key: 'codigo',      icon: FileText,  readOnly: true },
-                  { label: 'Rol del sistema',     key: 'rol',         icon: Shield,    readOnly: true },
+                  { label: 'Nombre completo',      key: 'nombre',       icon: User,       readOnly: false },
+                  { label: 'Correo institucional',  key: 'correo',       icon: Globe,      readOnly: false },
+                  { label: 'Departamento',          key: 'departamento', icon: FolderOpen, readOnly: false },
+                  { label: 'Código docente',        key: 'codigo',       icon: FileText,   readOnly: true  },
+                  { label: 'Rol del sistema',       key: 'rol',          icon: Shield,     readOnly: true  },
                 ].map(({ label, key, icon: Icon, readOnly }) => (
                   <div key={key}>
                     <label className="flex items-center gap-1.5 text-xs mb-1.5"
@@ -607,7 +680,7 @@ function PerfilView() {
                       <Icon size={11} /> {label}
                     </label>
                     <input
-                      value={form[key]}
+                      value={form[key] ?? ''}
                       readOnly={readOnly}
                       onChange={e => !readOnly && setForm(f => ({ ...f, [key]: e.target.value }))}
                       className="w-full text-sm px-3 py-2.5 rounded-lg outline-none"
@@ -627,7 +700,7 @@ function PerfilView() {
                   <FileText size={11} /> Biografía profesional
                 </label>
                 <textarea
-                  value={form.bio}
+                  value={form.bio ?? ''}
                   onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
                   rows={3}
                   className="w-full text-sm px-3 py-2.5 rounded-lg outline-none resize-none"
@@ -644,17 +717,19 @@ function PerfilView() {
           {/* Footer buttons */}
           <div className="flex items-center justify-end gap-3 px-6 py-4 border-t flex-shrink-0"
             style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-            <button className="text-sm px-4 py-2 rounded-lg transition-colors"
+            <button onClick={handleCancel}
+              className="text-sm px-4 py-2 rounded-lg transition-colors"
               style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)' }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.11)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}>
               Cancelar
             </button>
-            <button className="text-sm px-5 py-2 rounded-lg font-medium"
+            <button onClick={handleSave} disabled={saving}
+              className="text-sm px-5 py-2 rounded-lg font-medium disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff' }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+              onMouseEnter={e => { if (!saving) e.currentTarget.style.opacity = '0.85' }}
               onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-              Guardar cambios
+              {saving ? 'Guardando…' : 'Guardar cambios'}
             </button>
           </div>
         </div>

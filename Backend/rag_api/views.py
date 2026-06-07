@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Tesis, LogConsulta
+from .models import Tesis, LogConsulta, Usuario
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -213,3 +213,64 @@ class ProyectosListView(APIView):
         }
 
         return Response({'proyectos': proyectos, 'conteos': conteos})
+
+
+class PerfilView(APIView):
+    """
+    GET   /api/perfil/  → datos del docente activo + estadísticas
+    PATCH /api/perfil/  → actualiza campos editables (nombre, correo, departamento, bio)
+    """
+    ACTIVE_USER_ID = 1  # placeholder hasta implementar autenticación real
+
+    def _stats(self, user_id):
+        logs = list(LogConsulta.objects.filter(usuario_id=user_id).values('resultado')[:500])
+        alertas = sum(
+            1 for lc in logs
+            if isinstance(lc['resultado'], list) and
+               any(isinstance(d, dict) and d.get('similitud', 0) >= 85 for d in lc['resultado'])
+        )
+        return {
+            'consultas_rag':       LogConsulta.objects.filter(usuario_id=user_id).count(),
+            'proyectos_revisados': Tesis.objects.exclude(estado='En Revisión').count(),
+            'alertas_emitidas':    alertas,
+            'tesis_indexadas':     Tesis.objects.count(),
+        }
+
+    def _serialize(self, user):
+        return {
+            'nombre':      user.nombre,
+            'correo':      user.email,
+            'departamento': user.departamento or '',
+            'codigo':      user.codigo_docente or '',
+            'rol':         user.rol or '',
+            'bio':         user.biografia or '',
+            'stats':       self._stats(user.pk),
+        }
+
+    def get(self, request):
+        try:
+            user = Usuario.objects.get(pk=self.ACTIVE_USER_ID)
+            return Response(self._serialize(user))
+        except Usuario.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request):
+        try:
+            user = Usuario.objects.get(pk=self.ACTIVE_USER_ID)
+            mapping = {
+                'nombre':      'nombre',
+                'correo':      'email',
+                'departamento': 'departamento',
+                'bio':         'biografia',
+            }
+            changed = []
+            for form_key, db_field in mapping.items():
+                val = request.data.get(form_key)
+                if val is not None and str(val).strip():
+                    setattr(user, db_field, str(val).strip())
+                    changed.append(db_field)
+            if changed:
+                user.save(update_fields=changed)
+            return Response(self._serialize(user))
+        except Usuario.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
