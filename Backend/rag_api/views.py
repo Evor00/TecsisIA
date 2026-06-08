@@ -313,35 +313,43 @@ class ProyectosListView(APIView):
         )
         tesis.refresh_from_db()
 
-        # Guardar resumen como chunk 0 (página 0 = abstract)
+        # Guardar resumen como chunk 0 (pagina_origen=0 = abstract)
+        # Requiere patch_abstract_constraint.sql aplicado en BD
+        resumen_guardado = False
         if resumen:
-            chunk = DocumentoRAG.objects.create(
-                tesis           = tesis,
-                contenido_texto = resumen,
-                pagina_origen   = 0,
-                chunk_index     = 0,
-            )
             try:
-                vec = _encode(resumen)
-                with connection.cursor() as cur:
-                    cur.execute(
-                        "UPDATE documentos_rag SET embedding = %s::vector WHERE id = %s",
-                        [_vec_str(vec), chunk.id],
-                    )
+                chunk = DocumentoRAG.objects.create(
+                    tesis           = tesis,
+                    contenido_texto = resumen,
+                    pagina_origen   = 0,
+                    chunk_index     = 0,
+                )
+                resumen_guardado = True
+                try:
+                    vec = _encode(resumen)
+                    with connection.cursor() as cur:
+                        cur.execute(
+                            "UPDATE documentos_rag SET embedding = %s::vector WHERE id = %s",
+                            [_vec_str(vec), chunk.id],
+                        )
+                except Exception:
+                    pass
             except Exception:
+                # Si el constraint aún no fue parcheado, la tesis igual se registra
                 pass
 
         return Response({
-            'id':          tesis.id,
-            'codigo':      tesis.codigo or '',
-            'grupo':       tesis.grupo  or 'Sin Grupo',
-            'estado':      'en-revision',
-            'titulo':      tesis.titulo,
-            'tecnologias': tesis.tecnologias if isinstance(tesis.tecnologias, list) else [],
-            'autores':     tesis.autor,
-            'similitud':   0,
-            'score':       None,
-            'fecha':       tesis.fecha_subida.strftime('%d %b %Y'),
+            'id':              tesis.id,
+            'codigo':          tesis.codigo or '',
+            'grupo':           tesis.grupo  or 'Sin Grupo',
+            'estado':          'en-revision',
+            'titulo':          tesis.titulo,
+            'tecnologias':     tesis.tecnologias if isinstance(tesis.tecnologias, list) else [],
+            'autores':         tesis.autor,
+            'similitud':       0,
+            'score':           None,
+            'fecha':           tesis.fecha_subida.strftime('%d %b %Y'),
+            'resumen_guardado': resumen_guardado,
         }, status=status.HTTP_201_CREATED)
 
 
