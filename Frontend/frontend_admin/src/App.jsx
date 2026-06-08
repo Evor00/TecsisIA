@@ -205,6 +205,21 @@ function HistorialView() {
     r.titulo.toLowerCase().includes(search.toLowerCase())
   )
 
+  const handleExportCSV = () => {
+    const headers = ['ID','Consulta RAG','Tokens','Fecha','Hora','Coincidencias','Similitud Máx.','Estado']
+    const rows = filtered.map(r => [
+      r.id, `"${r.titulo.replace(/"/g,'""')}"`, r.tokens,
+      r.fecha, r.hora, r.coincidencias,
+      r.similitud != null ? `${r.similitud}%` : '—', r.estado,
+    ])
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url; a.download = `historial_${new Date().toISOString().slice(0,10)}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
+
   const alertas   = data.filter(r => r.estado === 'alta-similitud').length
   const avgTokens = data.length
     ? Math.round(data.reduce((s, r) => s + (r.tokens || 0), 0) / data.length).toLocaleString('es-PE')
@@ -230,7 +245,8 @@ function HistorialView() {
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}>
               <Filter size={12} /> Filtrar <ChevronDown size={12} />
             </button>
-            <button className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors"
+            <button onClick={handleExportCSV}
+              className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors"
               style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff' }}
               onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
               onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
@@ -349,6 +365,488 @@ function HistorialView() {
   )
 }
 
+// ─── MODAL: DETALLE DE TESIS ──────────────────────────────────────────────────
+
+function DetalleTesisModal({ proyecto: p, onClose }) {
+  const [detalle, setDetalle] = useState(null)
+
+  useEffect(() => {
+    if (!p.id) return
+    fetch(`/api/proyectos/${p.id}/`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d && setDetalle(d))
+      .catch(() => {})
+  }, [p.id])
+
+  const estadoColors = {
+    aprobado:          { color: '#4ade80', bg: 'rgba(34,197,94,0.12)'   },
+    'en-revision':     { color: '#fbbf24', bg: 'rgba(251,191,36,0.12)'  },
+    observado:         { color: '#fb923c', bg: 'rgba(251,146,60,0.12)'  },
+    rechazado:         { color: '#f87171', bg: 'rgba(239,68,68,0.12)'   },
+  }
+  const ec = estadoColors[p.estado] ?? estadoColors.aprobado
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="w-full max-w-lg rounded-2xl flex flex-col"
+        style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '85vh' }}>
+
+        {/* Header con gradiente */}
+        <div className="relative rounded-t-2xl px-6 pt-6 pb-5 overflow-hidden flex-shrink-0"
+          style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08))' }}>
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }} />
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.4), rgba(139,92,246,0.3))' }}>
+                <FileText size={18} style={{ color: '#a5b4fc' }} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md"
+                    style={{ background: 'rgba(99,102,241,0.25)', color: '#818cf8' }}>{p.codigo}</span>
+                  <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{p.grupo}</span>
+                </div>
+                <h2 className="text-sm font-semibold text-white leading-snug">{p.titulo}</h2>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-1.5 rounded-lg flex-shrink-0 transition-colors"
+              style={{ color: 'rgba(255,255,255,0.4)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}>
+              <XCircle size={17} />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 tecsis-scrollbar">
+          {/* Estado + Score */}
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium"
+              style={{ background: ec.bg, color: ec.color }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: ec.color }} />
+              <EstadoBadge estado={p.estado} />
+            </span>
+            {p.score && (
+              <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium"
+                style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}>
+                <BarChart2 size={11} /> Score: {p.score}
+              </span>
+            )}
+            <span className="text-xs ml-auto" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              Registrado {p.fecha}
+            </span>
+          </div>
+
+          {/* Autores */}
+          <div className="rounded-xl p-4"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Users size={13} style={{ color: 'rgba(255,255,255,0.4)' }} />
+              <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>AUTORES</span>
+            </div>
+            <div className="text-sm text-white">{p.autores}</div>
+          </div>
+
+          {/* Tecnologías */}
+          {p.tecnologias?.length > 0 && (
+            <div className="rounded-xl p-4"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Cpu size={13} style={{ color: 'rgba(255,255,255,0.4)' }} />
+                <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>STACK TECNOLÓGICO</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {p.tecnologias.map(t => <TechTag key={t} name={t} />)}
+              </div>
+            </div>
+          )}
+
+          {/* Similitud */}
+          <div className="rounded-xl p-4"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp size={13} style={{ color: 'rgba(255,255,255,0.4)' }} />
+              <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>ANÁLISIS DE SIMILITUD RAG</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="w-full h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                  <div className="h-full rounded-full transition-all"
+                    style={{ width: `${p.similitud}%`, background: simColor(p.similitud) }} />
+                </div>
+              </div>
+              <span className="text-lg font-bold flex-shrink-0" style={{ color: simColor(p.similitud) }}>
+                {p.similitud}%
+              </span>
+            </div>
+            <p className="text-xs mt-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              {p.similitud >= 80
+                ? 'Similitud alta — se recomienda revisión exhaustiva antes de aprobar.'
+                : p.similitud >= 60
+                ? 'Similitud moderada — revisar secciones específicas señaladas.'
+                : 'Similitud baja — el documento presenta contenido original.'}
+            </p>
+          </div>
+
+          {/* Abstract / Resumen */}
+          {detalle?.resumen ? (
+            <div className="rounded-xl p-4"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <BookOpen size={13} style={{ color: 'rgba(255,255,255,0.4)' }} />
+                  <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>RESUMEN / ABSTRACT</span>
+                </div>
+                {detalle.total_chunks > 0 && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc' }}>
+                    {detalle.total_chunks} {detalle.total_chunks === 1 ? 'página' : 'páginas'} indexadas
+                  </span>
+                )}
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                {detalle.resumen}
+              </p>
+            </div>
+          ) : detalle !== null && !detalle?.resumen ? (
+            <div className="rounded-xl p-4 text-center"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.07)' }}>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                Sin resumen registrado — sube el PDF del proyecto para habilitar la búsqueda semántica.
+              </p>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end px-6 py-4 border-t flex-shrink-0"
+          style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+          <button onClick={onClose}
+            className="text-sm px-5 py-2 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.11)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: REGISTRAR PROYECTO ───────────────────────────────────────────────
+
+const TECH_QUICK = [
+  'React','Vue.js','Angular','Node.js','FastAPI','Spring Boot',
+  'Flutter','Django','PostgreSQL','MongoDB','Firebase','MySQL','Python','Docker',
+]
+
+function RegistrarProyectoModal({ onClose, onCreated }) {
+  const [form, setForm]           = useState({ titulo: '', autor: '', grupo: '', promocion: 'C24', tecnologias: [], resumen: '' })
+  const [techInput, setTechInput] = useState('')
+  const [saving, setSaving]       = useState(false)
+  const [error, setError]         = useState(null)
+  const [pdfFile, setPdfFile]     = useState(null)
+  const [xmlOk, setXmlOk]         = useState(null)   // nombre del XML importado
+  const [savingStep, setSavingStep] = useState('')    // texto de progreso
+  const xmlRef = useRef(null)
+  const pdfRef = useRef(null)
+
+  const addTech = (name) => {
+    const t = (name || techInput).trim()
+    if (t && !form.tecnologias.includes(t))
+      setForm(f => ({ ...f, tecnologias: [...f.tecnologias, t] }))
+    setTechInput('')
+  }
+  const removeTech = (t) => setForm(f => ({ ...f, tecnologias: f.tecnologias.filter(x => x !== t) }))
+
+  // ── XML import ───────────────────────────────────────────────────────────────
+  const handleXML = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const doc   = new DOMParser().parseFromString(ev.target.result, 'text/xml')
+        const get   = (tag) => doc.querySelector(tag)?.textContent?.trim() || ''
+        const techs = [...doc.querySelectorAll('tech, tecnologia')].map(n => n.textContent.trim()).filter(Boolean)
+        setForm(f => ({
+          ...f,
+          titulo:      get('titulo') || f.titulo,
+          autor:       get('autores') || get('autor') || f.autor,
+          grupo:       get('grupo')  || f.grupo,
+          promocion:   get('promocion') || f.promocion,
+          tecnologias: techs.length ? techs : f.tecnologias,
+          resumen:     get('resumen') || f.resumen,
+        }))
+        setXmlOk(file.name)
+        setError(null)
+      } catch {
+        setError('El archivo XML no tiene el formato esperado.')
+      }
+    }
+    reader.readAsText(file, 'UTF-8')
+  }
+
+  // ── PDF attach ───────────────────────────────────────────────────────────────
+  const handlePDF = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setError('Solo se aceptan archivos PDF.')
+      return
+    }
+    setPdfFile(file)
+    setError(null)
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (!form.titulo.trim() || !form.autor.trim()) {
+      setError('El título y el autor son obligatorios.')
+      return
+    }
+    setSaving(true); setError(null)
+    try {
+      // 1. Registrar proyecto
+      setSavingStep('Registrando proyecto…')
+      const res  = await fetch('/api/proyectos/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al registrar')
+
+      // 2. Subir PDF si está adjunto
+      if (pdfFile && data.id) {
+        setSavingStep('Indexando PDF en repositorio RAG…')
+        const fd = new FormData()
+        fd.append('file', pdfFile)
+        fd.append('tesis_id', data.id)
+        await fetch('/api/rag/upload/', { method: 'POST', body: fd })
+      }
+
+      onCreated(data)
+      onClose()
+    } catch (e) {
+      setError(e.message || 'No se pudo registrar el proyecto.')
+    } finally {
+      setSaving(false); setSavingStep('')
+    }
+  }
+
+  const Field = ({ label, children }) => (
+    <div>
+      <label className="block text-xs mb-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</label>
+      {children}
+    </div>
+  )
+
+  const inputStyle = {
+    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+    color: 'rgba(255,255,255,0.85)', borderRadius: '8px',
+    padding: '9px 12px', fontSize: '14px', width: '100%', outline: 'none',
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="w-full max-w-lg rounded-2xl flex flex-col"
+        style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '92vh' }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0"
+          style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+          <div>
+            <h2 className="text-sm font-semibold text-white">Registrar nuevo proyecto</h2>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Se creará en estado "En Revisión"</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg transition-colors"
+            style={{ color: 'rgba(255,255,255,0.4)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}>
+            <XCircle size={17} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 tecsis-scrollbar">
+
+          {/* ── Zona de importación ─────────────────────────────────────────── */}
+          <div className="rounded-xl p-4 space-y-3"
+            style={{ background: 'rgba(99,102,241,0.07)', border: '1px dashed rgba(99,102,241,0.35)' }}>
+            <p className="text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: 'rgba(165,180,252,0.7)' }}>Importar desde archivo</p>
+
+            <div className="flex gap-2">
+              {/* XML */}
+              <input ref={xmlRef} type="file" accept=".xml" className="hidden" onChange={handleXML} />
+              <button onClick={() => xmlRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-colors"
+                style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.28)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(99,102,241,0.18)'}>
+                <FileText size={13} /> XML — autocompletar
+              </button>
+
+              {/* PDF */}
+              <input ref={pdfRef} type="file" accept=".pdf" className="hidden" onChange={handlePDF} />
+              <button onClick={() => pdfRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-colors"
+                style={{
+                  background: pdfFile ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)',
+                  color:      pdfFile ? '#4ade80'               : 'rgba(255,255,255,0.55)',
+                  border:     `1px solid ${pdfFile ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                }}
+                onMouseEnter={e => !pdfFile && (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+                onMouseLeave={e => !pdfFile && (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}>
+                <Paperclip size={13} /> {pdfFile ? pdfFile.name.slice(0, 18) + '…' : 'PDF — adjuntar'}
+              </button>
+            </div>
+
+            {/* Feedback XML */}
+            {xmlOk && (
+              <div className="flex items-center gap-2 text-[11px]"
+                style={{ color: '#4ade80' }}>
+                <CheckCircle2 size={12} />
+                <span><strong>{xmlOk}</strong> importado — campos completados automáticamente</span>
+              </div>
+            )}
+
+            {/* Feedback PDF */}
+            {pdfFile && (
+              <div className="flex items-center justify-between text-[11px]">
+                <span style={{ color: '#4ade80' }}>
+                  <CheckCircle2 size={12} className="inline mr-1" />
+                  PDF adjunto — se indexará al guardar (embeddings + pgvector)
+                </span>
+                <button onClick={() => setPdfFile(null)} style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>×</button>
+              </div>
+            )}
+          </div>
+
+          {/* ── Formulario ──────────────────────────────────────────────────── */}
+          <Field label="Título del proyecto *">
+            <input style={inputStyle} placeholder="Ej: Sistema de gestión de inventarios con IA"
+              value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} />
+          </Field>
+
+          <Field label="Autor(es) *">
+            <input style={inputStyle} placeholder="Ej: K. Quispe · M. Torres · L. Ramos"
+              value={form.autor} onChange={e => setForm(f => ({ ...f, autor: e.target.value }))} />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Grupo">
+              <input style={inputStyle} placeholder="Ej: Grupo Alpha"
+                value={form.grupo} onChange={e => setForm(f => ({ ...f, grupo: e.target.value }))} />
+            </Field>
+            <Field label="Promoción">
+              <select style={{ ...inputStyle, cursor: 'pointer' }}
+                value={form.promocion} onChange={e => setForm(f => ({ ...f, promocion: e.target.value }))}>
+                {['C24','C23','C25','C22'].map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </Field>
+          </div>
+
+          <Field label="Tecnologías">
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {TECH_QUICK.map(t => (
+                <button key={t} onClick={() => addTech(t)}
+                  className="text-[11px] px-2 py-0.5 rounded-md transition-colors"
+                  style={{
+                    background: form.tecnologias.includes(t) ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.06)',
+                    color:      form.tecnologias.includes(t) ? '#a5b4fc' : 'rgba(255,255,255,0.5)',
+                    border:     `1px solid ${form.tecnologias.includes(t) ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input style={{ ...inputStyle, flex: 1 }} placeholder="Otra tecnología..."
+                value={techInput} onChange={e => setTechInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addTech()} />
+              <button onClick={() => addTech()}
+                className="px-3 rounded-lg text-xs font-medium flex-shrink-0"
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}>
+                + Añadir
+              </button>
+            </div>
+            {form.tecnologias.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {form.tecnologias.map(t => (
+                  <span key={t} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md"
+                    style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>
+                    {t}
+                    <button onClick={() => removeTech(t)} style={{ color: 'rgba(165,180,252,0.6)', lineHeight: 1 }}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </Field>
+
+          <Field label="Resumen / Abstract">
+            <textarea
+              rows={4}
+              style={{ ...inputStyle, resize: 'vertical', lineHeight: '1.5' }}
+              placeholder="Descripción del proyecto, objetivos, metodología y resultados esperados…"
+              value={form.resumen}
+              onChange={e => setForm(f => ({ ...f, resumen: e.target.value }))}
+            />
+            {form.resumen && (
+              <p className="text-[10px] mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                {form.resumen.length} caracteres — se indexará como embedding semántico
+              </p>
+            )}
+          </Field>
+
+          {error && (
+            <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <AlertCircle size={13} /> {error}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-4 border-t flex-shrink-0"
+          style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+          {saving
+            ? <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{savingStep}</span>
+            : <span />
+          }
+          <div className="flex items-center gap-3">
+            <button onClick={onClose} disabled={saving}
+              className="text-sm px-4 py-2 rounded-lg disabled:opacity-50"
+              style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.11)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}>
+              Cancelar
+            </button>
+            <button onClick={handleSubmit} disabled={saving}
+              className="text-sm px-5 py-2 rounded-lg font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff' }}
+              onMouseEnter={e => { if (!saving) e.currentTarget.style.opacity = '0.85' }}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+              {saving ? 'Procesando…' : pdfFile ? 'Registrar + Indexar PDF' : 'Registrar proyecto'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── VIEW: PROYECTOS C24 ──────────────────────────────────────────────────────
 
 function ProyectosView() {
@@ -357,8 +855,11 @@ function ProyectosView() {
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [filtro, setFiltro]       = useState('todos')
+  const [showModal, setShowModal]       = useState(false)
+  const [detalle, setDetalle]           = useState(null)
 
-  useEffect(() => {
+  const loadData = () => {
+    setLoading(true)
     fetch('/api/proyectos/')
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
       .then(d => {
@@ -370,7 +871,9 @@ function ProyectosView() {
         setConteos({ todos: 6, aprobado: 2, 'en-revision': 2, observado: 1, rechazado: 1 })
       })
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { loadData() }, [])
 
   const TAB_DEFS = [
     { id: 'todos',       label: 'Todos' },
@@ -416,7 +919,8 @@ function ProyectosView() {
               Promoción 2024 · {conteos.todos} proyectos registrados
             </p>
           </div>
-          <button className="flex items-center gap-1.5 text-sm px-3.5 py-2 rounded-lg font-medium"
+          <button onClick={() => setShowModal(true)}
+            className="flex items-center gap-1.5 text-sm px-3.5 py-2 rounded-lg font-medium"
             style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff' }}
             onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
             onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
@@ -461,6 +965,7 @@ function ProyectosView() {
               <div key={p.codigo}
                 className="rounded-xl p-4 flex flex-col gap-3 cursor-pointer transition-colors"
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                onClick={() => setDetalle(p)}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.13)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}>
                 <div className="flex items-center justify-between">
@@ -497,6 +1002,20 @@ function ProyectosView() {
           </div>
         )}
       </div>
+
+      {showModal && (
+        <RegistrarProyectoModal
+          onClose={() => setShowModal(false)}
+          onCreated={(nuevo) => {
+            setProyectos(prev => [nuevo, ...prev])
+            setConteos(c => ({ ...c, todos: c.todos + 1, 'en-revision': c['en-revision'] + 1 }))
+          }}
+        />
+      )}
+
+      {detalle && (
+        <DetalleTesisModal proyecto={detalle} onClose={() => setDetalle(null)} />
+      )}
     </div>
   )
 }
@@ -573,9 +1092,6 @@ function PerfilView() {
 
   const subTabs = [
     { id: 'info',  label: 'Información Personal', icon: User },
-    { id: 'ia',    label: 'Modelo de IA',          icon: Cpu },
-    { id: 'notif', label: 'Notificaciones',        icon: Bell },
-    { id: 'seg',   label: 'Seguridad',             icon: Shield },
     { id: 'sys',   label: 'Sistema',               icon: Globe },
   ]
 
@@ -663,6 +1179,81 @@ function PerfilView() {
         {/* Right panel */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6 tecsis-scrollbar">
+            {activeTab === 'sys' && (
+              <div className="space-y-4 mb-4">
+                {/* Descripción del sistema */}
+                <div className="rounded-xl p-6"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.3),rgba(139,92,246,0.2))' }}>
+                      <Globe size={15} style={{ color: '#a5b4fc' }} />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-semibold text-white leading-none">Acerca de TecSis-IA</h2>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Versión 1.0 · Ciclo 2024-C</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                    Ante esta necesidad, surge la propuesta de una plataforma web centralizada diseñada para
+                    automatizar la gestión documental y optimizar el acceso a las investigaciones de la carrera.
+                    La solución incorpora un backend en Django para la ingesta de resúmenes estructurados en
+                    formato XML, un panel administrativo en React para supervisar los estados de los trámites
+                    y controlar la visibilidad de los archivos, y un motor de Inteligencia Artificial local
+                    que permite realizar búsquedas y conteos analíticos en lenguaje natural sobre el contenido almacenado.
+                  </p>
+                </div>
+
+                {/* Stack técnico */}
+                <div className="rounded-xl p-6"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider mb-4"
+                    style={{ color: 'rgba(255,255,255,0.35)' }}>Stack Tecnológico</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { capa: 'Frontend',   tech: 'React 19 + Tailwind CSS 4',           color: '#60a5fa', icon: '⚛️' },
+                      { capa: 'Backend',    tech: 'Django 6 + Django REST Framework',     color: '#4ade80', icon: '🐍' },
+                      { capa: 'Base de datos', tech: 'PostgreSQL + pgvector (HNSW)',      color: '#a78bfa', icon: '🗄️' },
+                      { capa: 'Motor IA',   tech: 'sentence-transformers · 384 dims',     color: '#fbbf24', icon: '🤖' },
+                      { capa: 'Build tool', tech: 'Vite 8 + proxy /api',                 color: '#fb923c', icon: '⚡' },
+                      { capa: 'PDF Parser', tech: 'pypdf · chunking por página',          color: '#34d399', icon: '📄' },
+                    ].map(({ capa, tech, color, icon }) => (
+                      <div key={capa} className="rounded-lg p-3 flex items-start gap-3"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span className="text-base flex-shrink-0">{icon}</span>
+                        <div>
+                          <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5"
+                            style={{ color }}>{capa}</div>
+                          <div className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{tech}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Arquitectura RAG */}
+                <div className="rounded-xl p-6"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider mb-4"
+                    style={{ color: 'rgba(255,255,255,0.35)' }}>Flujo RAG</h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {['PDF / XML', 'pypdf', 'Chunks', 'Embeddings 384d', 'pgvector HNSW', 'Cosine Search', 'Respuesta'].map((step, i, arr) => (
+                      <div key={step} className="flex items-center gap-2">
+                        <div className="text-xs px-2.5 py-1.5 rounded-lg text-center"
+                          style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.25)', whiteSpace: 'nowrap' }}>
+                          {step}
+                        </div>
+                        {i < arr.length - 1 && (
+                          <ChevronRight size={12} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab !== 'sys' && (
             <div className="rounded-xl p-6 mb-4"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <h2 className="text-sm font-semibold text-white mb-5">Información Personal</h2>
@@ -712,9 +1303,11 @@ function PerfilView() {
                 />
               </div>
             </div>
+            )}
           </div>
 
           {/* Footer buttons */}
+          {activeTab !== 'sys' && (
           <div className="flex items-center justify-end gap-3 px-6 py-4 border-t flex-shrink-0"
             style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
             <button onClick={handleCancel}
@@ -732,7 +1325,49 @@ function PerfilView() {
               {saving ? 'Guardando…' : 'Guardar cambios'}
             </button>
           </div>
+          )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── DISTRIBUCIÓN BAR ─────────────────────────────────────────────────────────
+
+function DistribucionBar({ metrics }) {
+  if (!metrics) return null
+  const total = metrics.total_tesis || 1
+  const items = [
+    { label: 'Aprobadas',   value: metrics.aprobadas   || 0, color: '#4ade80' },
+    { label: 'En Revisión', value: metrics.en_revision || 0, color: '#fbbf24' },
+    { label: 'Observadas',  value: metrics.observadas  || 0, color: '#fb923c' },
+    { label: 'Rechazadas',  value: metrics.rechazadas  || 0, color: '#f87171' },
+  ]
+  return (
+    <div className="flex-shrink-0 pt-3 mt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] font-semibold uppercase tracking-wider"
+          style={{ color: 'rgba(255,255,255,0.3)' }}>Distribución por estado</span>
+        <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.2)' }}>{total} proyectos</span>
+      </div>
+      <div className="flex h-1.5 rounded-full overflow-hidden gap-px mb-2">
+        {items.map(({ label, value, color }) =>
+          value > 0 ? (
+            <div key={label} title={`${label}: ${value}`}
+              className="h-full transition-all duration-700"
+              style={{ width: `${(value / total) * 100}%`, background: color, borderRadius: '999px' }} />
+          ) : null
+        )}
+      </div>
+      <div className="flex items-center gap-4">
+        {items.map(({ label, value, color }) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+            <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              {label} <span className="font-semibold" style={{ color: 'rgba(255,255,255,0.65)' }}>{value}</span>
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -747,6 +1382,10 @@ const METRIC_CARDS = [
 ]
 
 const INITIAL_MESSAGES = [
+  {
+    role: 'assistant',
+    content: 'Bienvenido a TecSis-IA — plataforma centralizada para la gestión documental e investigación académica de la carrera de Diseño y Desarrollo de Software.\n\nEsta solución incorpora un backend en Django para la ingesta de documentos estructurados, un panel administrativo en React para supervisar estados de trámites y controlar la visibilidad de archivos, y un motor de Inteligencia Artificial local que permite realizar búsquedas y conteos analíticos en lenguaje natural sobre el repositorio semántico.\n\n¿En qué puedo ayudarte hoy?',
+  },
   { role: 'user', content: '¿Qué tesis hay relacionadas con sistemas web con React y Spring Boot?' },
   {
     role: 'assistant',
@@ -758,12 +1397,14 @@ const INITIAL_MESSAGES = [
   },
 ]
 
-function DashboardChatView({ metrics }) {
+function DashboardChatView({ metrics, userInitials = 'JG' }) {
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [input, setInput]       = useState('')
+  const [isLoading, setIsLoading]     = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const messagesEndRef = useRef(null)
-  const textareaRef = useRef(null)
+  const textareaRef    = useRef(null)
+  const fileInputRef   = useRef(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -798,6 +1439,36 @@ function DashboardChatView({ metrics }) {
     }
   }
 
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+
+    setMessages(prev => [...prev, { role: 'user', content: `📄 Subiendo documento: ${file.name}` }])
+    setIsUploading(true)
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const res  = await fetch('/api/rag/upload/', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al procesar el PDF')
+
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `Documento indexado correctamente en el repositorio semántico.\n\n📋 Archivo: ${data.filename}\n📄 Páginas procesadas: ${data.pages}\n🧩 Chunks creados: ${data.chunks}\n🔢 Embeddings vectoriales: ${data.embeddings ? `✓ generados (384 dims · pgvector)` : '— en cola'}\n🏷️ Proyecto: ${data.tesis_codigo} — ${data.tesis_titulo}\n\nEl contenido ya está disponible para consultas RAG. Puedes preguntarme sobre el documento ahora.`,
+      }])
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `No pude procesar el archivo. ${err.message}`,
+      }])
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   const quickActions = [
     { icon: Lightbulb, label: 'Analizar duplicidad',   prompt: 'Analiza si existen tesis con contenido duplicado en el repositorio' },
     { icon: BookOpen,  label: 'Buscar por tecnología', prompt: 'Muestra las tesis agrupadas por tecnología utilizada' },
@@ -805,11 +1476,11 @@ function DashboardChatView({ metrics }) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Dashboard (30%) */}
+      {/* Dashboard (36%) */}
       <section className="border-b flex-shrink-0"
-        style={{ height: '30%', minHeight: '190px', borderColor: 'rgba(255,255,255,0.05)' }}>
+        style={{ height: '36%', minHeight: '230px', borderColor: 'rgba(255,255,255,0.05)' }}>
         <div className="h-full p-5 flex flex-col">
-          <div className="flex items-center justify-between mb-4 flex-shrink-0">
+          <div className="flex items-center justify-between mb-3 flex-shrink-0">
             <div>
               <h2 className="text-sm font-semibold text-white leading-none">Resumen del Repositorio Local</h2>
               <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Métricas del ciclo académico 2024-C</p>
@@ -823,6 +1494,7 @@ function DashboardChatView({ metrics }) {
           <div className="grid grid-cols-3 gap-4 flex-1">
             {METRIC_CARDS.map(card => <MetricCard key={card.key} {...card} value={metrics?.[card.key]} />)}
           </div>
+          <DistribucionBar metrics={metrics} />
         </div>
       </section>
 
@@ -834,7 +1506,7 @@ function DashboardChatView({ metrics }) {
           <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>Asistente de Revisión Semántica</span>
           <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full"
             style={{ color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.05)' }}>
-            RAG · Mistral-14B Local
+            RAG · sentence-transformers 384d
           </span>
         </div>
 
@@ -855,21 +1527,30 @@ function DashboardChatView({ metrics }) {
                   }}>
                   {msg.content}
                 </div>
-                {msg.documents?.map((doc, j) => <SimilarityCard key={j} {...doc} />)}
+                {msg.documents?.length > 0
+                  ? msg.documents.map((doc, j) => <SimilarityCard key={j} {...doc} />)
+                  : msg.role === 'assistant' && msg.documents !== undefined && (
+                    <div className="text-xs px-3 py-2 rounded-xl"
+                      style={{ background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      No se encontraron documentos relacionados en el repositorio.
+                    </div>
+                  )
+                }
               </div>
               {msg.role === 'user' && (
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>JG</div>
+                  style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>{userInitials}</div>
               )}
             </div>
           ))}
-          {isLoading && (
+          {(isLoading || isUploading) && (
             <div className="flex gap-3">
               <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}>
-                <Bot size={14} />
+                {isUploading ? <FileText size={14} /> : <Bot size={14} />}
               </div>
-              <div className="rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5" style={{ background: '#2a2a2a' }}>
+              <div className="rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2" style={{ background: '#2a2a2a' }}>
+                {isUploading && <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Procesando PDF…</span>}
                 {[0, 150, 300].map(d => (
                   <span key={d} className="w-1.5 h-1.5 rounded-full animate-bounce"
                     style={{ background: 'rgba(255,255,255,0.4)', animationDelay: `${d}ms` }} />
@@ -895,9 +1576,15 @@ function DashboardChatView({ metrics }) {
           </div>
           <div className="flex items-end gap-2 rounded-2xl px-3 py-2.5"
             style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <button className="pb-1.5 transition-colors flex-shrink-0" style={{ color: 'rgba(255,255,255,0.2)' }}
-              onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
-              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}>
+            <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileSelect} />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading || isLoading}
+              title="Subir PDF al repositorio RAG"
+              className="pb-1.5 transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ color: isUploading ? '#818cf8' : 'rgba(255,255,255,0.3)' }}
+              onMouseEnter={e => { if (!isUploading && !isLoading) e.currentTarget.style.color = '#818cf8' }}
+              onMouseLeave={e => { if (!isUploading) e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
               <Paperclip size={17} />
             </button>
             <textarea ref={textareaRef} value={input} rows={1}
@@ -911,7 +1598,7 @@ function DashboardChatView({ metrics }) {
                 style={{ color: 'rgba(255,255,255,0.25)' }}
                 onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
                 onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.25)'}>
-                Mistral-14B Local <ChevronDown size={12} />
+                MiniLM-L12 Local <ChevronDown size={12} />
               </button>
               <button onClick={handleSend} disabled={!input.trim() || isLoading}
                 className="w-7 h-7 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed"
@@ -939,7 +1626,8 @@ const NAV_ITEMS = [
 // ─── APP ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [metrics, setMetrics] = useState(null)
+  const [metrics, setMetrics]   = useState(null)
+  const [perfil, setPerfil]     = useState(null)
   const [activeNav, setActiveNav] = useState('dashboard')
 
   useEffect(() => {
@@ -948,6 +1636,23 @@ export default function App() {
       .then(data => setMetrics(data))
       .catch(() => setMetrics({ total_tesis: 70, aprobadas: 50, en_revision: 20 }))
   }, [])
+
+  useEffect(() => {
+    fetch('/api/perfil/')
+      .then(r => r.json())
+      .then(d => setPerfil(d))
+      .catch(() => {})
+  }, [])
+
+  const sidebarInitials = perfil?.nombre
+    ? perfil.nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+    : 'JG'
+  const sidebarNombre = perfil?.nombre
+    ? perfil.nombre.split(' ').slice(0, 3).join(' ')
+    : 'Prof. Jaime Gomez'
+  const sidebarRol = perfil?.rol
+    ? perfil.rol.charAt(0).toUpperCase() + perfil.rol.slice(1)
+    : 'Docente'
 
   return (
     <div className="flex h-screen overflow-hidden text-white"
@@ -1007,10 +1712,10 @@ export default function App() {
           <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg"
             style={{ cursor: 'default' }}>
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>JG</div>
+              style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>{sidebarInitials}</div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium leading-none truncate" style={{ color: 'rgba(255,255,255,0.8)' }}>Prof. Jaime Gomez</div>
-              <div className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>Docente · DDS</div>
+              <div className="text-xs font-medium leading-none truncate" style={{ color: 'rgba(255,255,255,0.8)' }}>{sidebarNombre}</div>
+              <div className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>{sidebarRol} · DDS</div>
             </div>
             <button onClick={() => setActiveNav('perfil')}
               className="flex-shrink-0 p-1 rounded-md transition-colors"
@@ -1025,7 +1730,7 @@ export default function App() {
 
       {/* ── Main ── */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        {activeNav === 'dashboard' && <DashboardChatView metrics={metrics} />}
+        {activeNav === 'dashboard' && <DashboardChatView metrics={metrics} userInitials={sidebarInitials} />}
         {activeNav === 'historial' && <HistorialView />}
         {activeNav === 'proyectos' && <ProyectosView />}
         {activeNav === 'perfil'    && <PerfilView />}

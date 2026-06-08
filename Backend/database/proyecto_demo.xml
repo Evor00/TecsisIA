@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<proyecto>
+  <titulo>Sistema de Recomendación Académica con Machine Learning</titulo>
+  <autores>C. Quispe · B. Mamani · J. Tapia</autores>
+  <grupo>Grupo Omega</grupo>
+  <promocion>C24</promocion>
+  <tecnologias>
+    <tech>React</tech>
+    <tech>FastAPI</tech>
+    <tech>PostgreSQL</tech>
+    <tech>scikit-learn</tech>
+    <tech>Docker</tech>
+  </tecnologias>
+  <resumen>El presente proyecto propone el desarrollo de un sistema de recomendación académica basado en técnicas de Machine Learning para la carrera de Desarrollo de Software. La plataforma analiza el historial de rendimiento académico, las preferencias de los estudiantes y las tendencias del mercado laboral para generar rutas de aprendizaje personalizadas. Se implementa un modelo de filtrado colaborativo combinado con un algoritmo de contenido utilizando scikit-learn, expuesto mediante una API REST construida con FastAPI. El frontend desarrollado en React permite visualizar las recomendaciones de manera interactiva y en tiempo real. Los datos son persistidos en PostgreSQL y el despliegue se realiza mediante contenedores Docker, garantizando portabilidad y escalabilidad del sistema.</resumen>
+</proyecto>

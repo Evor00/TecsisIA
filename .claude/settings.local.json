@@ -8,7 +8,16 @@
       "PowerShell(Get-ChildItem -Path \"d:\\\\proyectos\\\\TecsisAi\" -Recurse -Depth 2 | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\"d:\\\\proyectos\\\\TecsisAi\\\\\", \"\"\\) } | Sort-Object | Select-Object -First 150)",
       "PowerShell(Get-ChildItem -Path \"d:\\\\proyectos\\\\TecsisAi\\\\Frontend\\\\frontend_admin\\\\src\" -Recurse | Select-Object Name, @{Name=\"Size\";Expression={if\\($_.PSIsContainer\\){\"-\"}else{$_.Length}}} | Format-Table -AutoSize)",
       "PowerShell(Get-ChildItem -Path \"d:\\\\proyectos\\\\TecsisAi\\\\Backend\" -Exclude venv -Recurse -File | Select-Object Name, @{Name=\"Size\\(bytes\\)\";Expression={$_.Length}}, @{Name=\"Extension\";Expression={$_.Extension}} | Sort-Object Name)",
-      "PowerShell(Get-ChildItem -Path \"d:\\\\proyectos\\\\TecsisAi\\\\Frontend\\\\frontend_admin\" -Exclude node_modules -Recurse -File | Select-Object Name, @{Name=\"Size\\(bytes\\)\";Expression={$_.Length}}, @{Name=\"Extension\";Expression={$_.Extension}} | Sort-Object Name)"
+      "PowerShell(Get-ChildItem -Path \"d:\\\\proyectos\\\\TecsisAi\\\\Frontend\\\\frontend_admin\" -Exclude node_modules -Recurse -File | Select-Object Name, @{Name=\"Size\\(bytes\\)\";Expression={$_.Length}}, @{Name=\"Extension\";Expression={$_.Extension}} | Sort-Object Name)",
+      "Bash(pip install *)",
+      "Bash(pip freeze *)",
+      "Bash(Out-File -Encoding utf8 requirements.txt)",
+      "Bash(Get-Content requirements.txt)",
+      "Bash(Select-Object -First 5)",
+      "Bash(python manage.py shell -c ' *)",
+      "Bash(python manage.py check)",
+      "Bash(python -c ' *)",
+      "Bash(Select-String -NotMatch \"^16 objects\")"
     ],
     "additionalDirectories": [
       "d:\\proyectos\\TecsisAi"
