@@ -36,6 +36,7 @@ class Tesis(models.Model):
     fecha_subida     = models.DateTimeField(auto_now_add=True)
     similitud_maxima = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     score            = models.CharField(max_length=10, null=True, blank=True)
+    activo           = models.BooleanField(default=True)
     created_at       = models.DateTimeField(auto_now_add=True)
     updated_at       = models.DateTimeField(auto_now=True)
 
@@ -74,3 +75,38 @@ class LogConsulta(models.Model):
         db_table = 'log_consultas'
         managed  = False
         ordering = ['-fecha']
+
+
+class Conversacion(models.Model):
+    usuario    = models.ForeignKey(
+                     Usuario,
+                     on_delete=models.CASCADE,
+                     null=True,
+                     db_column='usuario_id',
+                 )
+    titulo     = models.CharField(max_length=200, default='Nueva conversación')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'conversaciones'
+        managed  = False
+        ordering = ['-updated_at']
+
+
+class Mensaje(models.Model):
+    conversacion = models.ForeignKey(
+                       Conversacion,
+                       on_delete=models.CASCADE,
+                       related_name='mensajes',
+                       db_column='conversacion_id',
+                   )
+    rol          = models.CharField(max_length=12, default='user')  # 'user' | 'assistant'
+    contenido    = models.TextField()
+    documentos   = models.JSONField(null=True, blank=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'mensajes'
+        managed  = False
+        ordering = ['created_at']

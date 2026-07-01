@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tesis>
+  <titulo>Sistema de Gestión de Inventarios Cloud con React y Spring Boot</titulo>
+  <autores>
+    <autor>K. Quispe</autor>
+    <autor>M. Torres</autor>
+    <autor>L. Ramos</autor>
+  </autores>
+  <grupo>Grupo Alpha</grupo>
+  <promocion>C24</promocion>
+  <codigo>C24-009</codigo>
+  <estado>Aprobada</estado>
+  <score>94/100</score>
+  <tecnologias>
+    <tecnologia>React</tecnologia>
+    <tecnologia>Spring Boot</tecnologia>
+    <tecnologia>PostgreSQL</tecnologia>
+    <tecnologia>Docker</tecnologia>
+  </tecnologias>
+  <resumen>
+    Sistema web para la gestión centralizada de inventarios en entornos cloud, desarrollado con arquitectura
+    de microservicios usando Spring Boot en el backend y React en el frontend. Incorpora seguimiento en tiempo
+    real, reportes analíticos y control de acceso basado en roles (RBAC). Desplegado en contenedores Docker
+    con integración continua mediante GitHub Actions.
+  </resumen>
+  <secciones>
+    <seccion titulo="Introducción">
+      El presente proyecto aborda la problemática de la gestión manual de inventarios en pequeñas y medianas
+      empresas, que genera errores frecuentes, pérdida de información y retrasos en la toma de decisiones.
+      Se propone una solución tecnológica basada en computación en la nube que automatiza los procesos
+      de registro, seguimiento y reporte de inventarios.
+    </seccion>
+    <seccion titulo="Marco Teórico">
+      La arquitectura de microservicios permite descomponer una aplicación en servicios independientes que
+      se comunican mediante APIs REST. Spring Boot facilita la creación de microservicios en Java con
+      configuración mínima. React es una biblioteca de JavaScript para construir interfaces de usuario
+      reactivas y de alto rendimiento. PostgreSQL es el sistema de base de datos relacional utilizado
+      para la persistencia de datos.
+    </seccion>
+    <seccion titulo="Metodología">
+      Se adoptó la metodología SCRUM con sprints de dos semanas. El proyecto se dividió en cuatro fases:
+      análisis de requerimientos, diseño de arquitectura, implementación y pruebas. Se utilizaron pruebas
+      unitarias con JUnit y pruebas de integración con Postman. El control de versiones se gestionó
+      con Git y GitHub.
+    </seccion>
+    <seccion titulo="Resultados">
+      El sistema logró reducir el tiempo de registro de inventario en un 70% respecto al proceso manual.
+      Las pruebas de carga demostraron capacidad para 500 usuarios concurrentes con un tiempo de respuesta
+      promedio de 120ms. La tasa de errores de registro bajó de 8% a menos del 0.5%.
+    </seccion>
+    <seccion titulo="Conclusiones">
+      Se implementó exitosamente un sistema de gestión de inventarios en la nube que cumple con todos
+      los requerimientos funcionales y no funcionales establecidos. La arquitectura de microservicios
+      demostró ser escalable y mantenible. Se recomienda extender el sistema con módulos de predicción
+      de demanda usando Machine Learning en futuras versiones.
+    </seccion>
+  </secciones>
+</tesis>

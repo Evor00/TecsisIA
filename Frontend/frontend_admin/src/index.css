@@ -15,7 +15,7 @@ body {
 }
 
 textarea::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(0, 0, 0, 0.3);
 }
 
 .tecsis-scrollbar::-webkit-scrollbar {
@@ -25,9 +25,9 @@ textarea::placeholder {
   background: transparent;
 }
 .tecsis-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 2px;
 }
 .tecsis-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.25);
 }
