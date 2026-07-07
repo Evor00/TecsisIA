@@ -121,12 +121,17 @@ def generate_answer(prompt: str, context_chunks: list[str], timeout: float = 30.
         'Content-Type': 'application/json',
     }
 
+    # Timeout de conexión corto: si el servidor del instituto no es alcanzable
+    # (red distinta, VPN caída, etc.) fallamos en segundos en vez de esperar
+    # el timeout completo antes de mostrar la respuesta de respaldo.
+    timeout_cfg = httpx.Timeout(timeout, connect=5.0)
+
     try:
         resp = httpx.post(
             f'{settings.OPENWEBUI_URL}/api/chat/completions',
             json=payload,
             headers=headers,
-            timeout=timeout,
+            timeout=timeout_cfg,
         )
     except httpx.RequestError as e:
         raise LLMUnavailableError(f'No se pudo conectar al motor de IA local: {e}') from e

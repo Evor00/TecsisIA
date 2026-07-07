@@ -37,6 +37,16 @@ def _encode(text: str) -> list[float]:
 def _vec_str(vec: list[float]) -> str:
     return '[' + ','.join(f'{v:.6f}' for v in vec) + ']'
 
+def _guardar_embedding(documento_id: int, texto: str) -> bool:
+    """Genera y guarda el embedding de un documento RAG usando pgvector."""
+    vec = _encode(texto)
+    with connection.cursor() as cur:
+        cur.execute(
+            "UPDATE documentos_rag SET embedding = %s::vector WHERE id = %s",
+            [_vec_str(vec), documento_id],
+        )
+    return True
+
 def _similitud_aproximada(prompt: str, titulo: str) -> int:
     palabras = [p.lower() for p in prompt.split() if len(p) > 3]
     if not palabras:
@@ -239,52 +249,53 @@ class RAGQueryView(APIView):
         usando_vectores = False
 
         try:
-            import numpy as np
-            vec_prompt = np.array(_encode(prompt), dtype='float32')
-            norm_p = float(np.linalg.norm(vec_prompt))
+            vec_prompt = _vec_str(_encode(prompt))
 
             with connection.cursor() as cur:
                 cur.execute("""
-                    SELECT dr.id, t.id, t.titulo, t.autor, t.estado, t.codigo,
-                           dr.contenido_texto, dr.embedding
-                    FROM documentos_rag dr
-                    JOIN tesis t ON dr.tesis_id = t.id
-                    WHERE dr.embedding IS NOT NULL AND t.activo = TRUE
-                """)
+                    WITH ranked AS (
+                        SELECT
+                            t.id AS tesis_id,
+                            t.titulo,
+                            t.autor,
+                            t.estado,
+                            t.codigo,
+                            dr.contenido_texto,
+                            (1 - (dr.embedding <=> %s::vector)) * 100 AS similitud,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY t.id
+                                ORDER BY dr.embedding <=> %s::vector
+                            ) AS rn
+                        FROM documentos_rag dr
+                        JOIN tesis t ON dr.tesis_id = t.id
+                        WHERE dr.embedding IS NOT NULL
+                          AND t.activo = TRUE
+                    )
+                    SELECT tesis_id, titulo, autor, estado, codigo, contenido_texto, similitud
+                    FROM ranked
+                    WHERE rn = 1
+                    ORDER BY similitud DESC
+                    LIMIT 6
+                """, [vec_prompt, vec_prompt])
                 rows = cur.fetchall()
 
-            if rows and norm_p > 0:
-                # Calcular similitud coseno en Python con numpy
-                scores: dict[int, dict] = {}
-                for dr_id, t_id, titulo, autor, estado, codigo, texto, emb_raw in rows:
-                    if emb_raw is None:
-                        continue
-                    if isinstance(emb_raw, str):
-                        import json as _json
-                        emb_raw = _json.loads(emb_raw)
-                    ea = np.array(emb_raw, dtype='float32')
-                    norm_e = float(np.linalg.norm(ea))
-                    if norm_e == 0:
-                        continue
-                    sim = float(np.dot(vec_prompt, ea) / (norm_p * norm_e)) * 100
-                    # Guardar el chunk con mayor similitud por proyecto
-                    if t_id not in scores or sim > scores[t_id]['similitud']:
-                        scores[t_id] = {
-                            'titulo':    titulo,
-                            'autor':     autor,
-                            'similitud': round(sim, 1),
-                            'estado':    ESTADO_DB_A_SLUG.get(estado, estado),
-                            'codigo':    codigo,
-                            'texto':     texto,
-                        }
+            if rows:
+                top = []
+                for _tesis_id, titulo, autor, estado, codigo, texto, similitud in rows:
+                    top.append({
+                        'titulo':    titulo,
+                        'autor':     autor,
+                        'similitud': round(float(similitud), 1),
+                        'estado':    ESTADO_DB_A_SLUG.get(estado, estado),
+                        'codigo':    codigo,
+                        'texto':     texto,
+                    })
 
-                top = sorted(scores.values(), key=lambda x: x['similitud'], reverse=True)[:6]
-                if top:
-                    similar_docs   = [{k: v for k, v in d.items() if k != 'texto'} for d in top]
-                    context_chunks = [f"[{d['titulo']} — {d['autor']}]\n{d['texto'][:1500]}" for d in top]
-                    usando_vectores = True
-        except Exception:
-            pass
+                similar_docs = [{k: v for k, v in d.items() if k != 'texto'} for d in top]
+                context_chunks = [f"[{d['titulo']} — {d['autor']}]\n{d['texto'][:1500]}" for d in top]
+                usando_vectores = True
+        except Exception as e:
+            print(f"[TecSis-IA] Error en búsqueda vectorial RAG: {e}")
 
         if not similar_docs:
             similar_docs = _keyword_search(prompt)
@@ -463,15 +474,7 @@ class ProyectosListView(APIView):
                     chunk_index     = 0,
                 )
                 resumen_guardado = True
-                try:
-                    vec = _encode(resumen)
-                    with connection.cursor() as cur:
-                        cur.execute(
-                            "UPDATE documentos_rag SET embedding = %s::jsonb WHERE id = %s",
-                            [_vec_str(vec), chunk.id],
-                        )
-                except Exception:
-                    pass
+                _guardar_embedding(chunk.id, resumen)
             except Exception:
                 pass
 
@@ -647,16 +650,7 @@ class RAGUploadView(APIView):
             )
 
             if model_loaded:
-                try:
-                    vec     = model.encode(texto[:1000]).tolist()
-                    vec_str = _vec_str(vec)
-                    with connection.cursor() as cur:
-                        cur.execute(
-                            "UPDATE documentos_rag SET embedding = %s::jsonb WHERE id = %s",
-                            [vec_str, chunk.id],
-                        )
-                except Exception:
-                    pass
+                _guardar_embedding(chunk.id, texto[:1000])
 
             chunks_creados += 1
 
@@ -959,16 +953,8 @@ class XMLUploadView(APIView):
                     pagina_origen   = item['pagina'],
                     chunk_index     = item['chunk'],
                 )
-                try:
-                    vec = _encode(item['texto'])
-                    with connection.cursor() as cur:
-                        cur.execute(
-                            "UPDATE documentos_rag SET embedding = %s::jsonb WHERE id = %s",
-                            [_vec_str(vec), doc.id],
-                        )
-                    chunks_indexados += 1
-                except Exception:
-                    chunks_indexados += 1  # chunk guardado aunque sin vector
+                _guardar_embedding(doc.id, item['texto'])
+                chunks_indexados += 1
             except Exception:
                 pass
 

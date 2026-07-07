@@ -4,3 +4,9 @@ __pycache__/
 .env
 node_modules/
 dist/
+
+# Archivos generados para presentacion/documentacion
+Diagrama_Gantt_TecSisIA.xlsx
+ESTUDIO_CODIGO.md
+MER_TecSisIA_ordenado.png
+MER_TecSisIA.svg

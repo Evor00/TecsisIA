@@ -177,12 +177,11 @@ LANGUAGE plpgsql AS $$
 DECLARE
     v_secuencia INTEGER;
 BEGIN
-    -- Cuenta cuántas tesis ya existen en esa promoción (bloqueando para evitar race conditions)
+    -- Cuenta cuántas tesis ya existen en esa promoción
     SELECT COUNT(*) + 1
     INTO   v_secuencia
     FROM   tesis
-    WHERE  promocion = NEW.promocion
-    FOR UPDATE;
+    WHERE  promocion = NEW.promocion;
 
     NEW.codigo := NEW.promocion || '-' || LPAD(v_secuencia::TEXT, 3, '0');
     RETURN NEW;
@@ -344,8 +343,8 @@ CREATE OR REPLACE PROCEDURE sp_registrar_nueva_tesis(
     IN  p_titulo        VARCHAR(350),
     IN  p_autor         VARCHAR(250),
     IN  p_promocion     VARCHAR(10),
-    IN  p_ruta_pdf      VARCHAR(500)    DEFAULT NULL,
-    IN  p_usuario_id    INTEGER         DEFAULT NULL,
+    IN  p_ruta_pdf      VARCHAR(500),
+    IN  p_usuario_id    INTEGER,
     OUT p_tesis_id      INTEGER,
     OUT p_codigo        VARCHAR(20)
 )
@@ -566,12 +565,15 @@ ORDER  BY id;
 SELECT * FROM sp_obtener_metricas_dashboard();
 
 -- 8.4 Simular registro de nueva tesis vía procedure
+-- Nota: los parámetros OUT requieren un placeholder (NULL) en notación posicional.
 CALL sp_registrar_nueva_tesis(
     'Despliegue Automatizado con Docker y Django en AWS',
     'L. Flores · M. Quispe',
     'C24',
     '/docs/C24/C24-007_docker_django_aws.pdf',
-    1
+    1,
+    NULL,
+    NULL
 );
 
 -- 8.5 Simular transición "En Revisión" → "Aprobada" (activa el trigger)
