@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tesis>
+  <titulo>Sistema ERP para PYMEs con Vue.js y Spring Boot</titulo>
+  <autores>
+    <autor>F. Paredes</autor>
+    <autor>J. Llanos</autor>
+  </autores>
+  <grupo>Grupo Alpha</grupo>
+  <promocion>C24</promocion>
+  <codigo>C24-106</codigo>
+  <estado>Aprobada</estado>
+  <score>87/100</score>
+  <tecnologias>
+    <tecnologia>Vue.js</tecnologia>
+    <tecnologia>Spring Boot</tecnologia>
+    <tecnologia>MySQL</tecnologia>
+    <tecnologia>Docker</tecnologia>
+    <tecnologia>Jenkins</tecnologia>
+  </tecnologias>
+  <resumen>
+    Sistema ERP modular para pequeñas y medianas empresas que integra módulos de ventas, compras, inventario, contabilidad y recursos humanos. Desarrollado con Vue.js en el frontend y Spring Boot en el backend con arquitectura de microservicios. Interfaz multiidioma (español/inglés) y generación de reportes en PDF.
+  </resumen>
+  <secciones>
+  <seccion titulo="Introducción">
+      El 78% de las PYMEs peruanas no cuenta con un sistema ERP adecuado, dependiendo de hojas de cálculo y procesos manuales que dificultan el crecimiento. Los sistemas ERP comerciales como SAP resultan prohibitivos para empresas con menos de 50 empleados. Este proyecto desarrolla un ERP modular, asequible y adaptado a la realidad de las PYMEs peruanas.
+    </seccion>
+  <seccion titulo="Marco Teórico">
+      Un ERP (Enterprise Resource Planning) integra todos los procesos de negocio en un sistema centralizado con una base de datos común. Vue.js es un framework progresivo JavaScript que permite construir interfaces de usuario con curva de aprendizaje gradual. Spring Boot con Spring Security implementa autenticación JWT y autorización basada en roles. Jenkins automatiza el ciclo CI/CD para despliegues sin interrupción.
+    </seccion>
+  <seccion titulo="Metodología">
+      Se utilizó la metodología RUP (Rational Unified Process) con fases de inicio, elaboración, construcción y transición. Se levantaron requerimientos con 5 PYMEs del sector comercial. El sistema fue diseñado con arquitectura de microservicios: servicio de ventas, compras, inventario, contabilidad y RRHH independientes. Docker Compose orquesta los servicios en producción.
+    </seccion>
+  <seccion titulo="Resultados">
+      El sistema fue implantado en 3 PYMEs piloto durante 3 meses. El tiempo de facturación se redujo en un 65%. Los errores de inventario disminuyeron al 0.8%. La generación de estados financieros pasó de 2 días a 5 minutos. El costo mensual de S/. 150 representa el 92% menos que alternativas comerciales comparables.
+    </seccion>
+  <seccion titulo="Conclusiones">
+      El ERP modular desarrollado responde exitosamente a las necesidades de gestión de PYMEs peruanas a un costo accesible. La arquitectura de microservicios facilitó el desarrollo paralelo y el mantenimiento independiente de módulos. Se recomienda desarrollar una versión SaaS multitenancy para escalar el servicio a cientos de empresas mediante suscripción mensual.
+    </seccion>
+  </secciones>
+</tesis>

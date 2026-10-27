@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Bell, BookMarked, CheckCircle2, ChevronRight, FileText, FolderOpen, Globe, Shield, TrendingUp, User, XCircle } from 'lucide-react'
+﻿import { useEffect, useState } from 'react'
+import { Bell, BookMarked, CheckCircle2, ChevronRight, FileText, FolderOpen, Globe, Shield, TrendingUp, User, XCircle, Cpu, Zap, RefreshCw, Save } from 'lucide-react'
 import { apiFetch } from '../services/api'
 import { PageBreadcrumb } from '../components/common'
 
@@ -20,6 +20,14 @@ function PerfilView() {
   const [stats, setStats]         = useState(PERFIL_FALLBACK.stats)
   const [saving, setSaving]       = useState(false)
   const [toast, setToast]         = useState(null) // { type: 'ok'|'err', msg }
+  const [modeloConfig, setModeloConfig] = useState(null)
+  const [modeloForm, setModeloForm] = useState({ url: '', modelo: '', token: '' })
+  const [savingModelo, setSavingModelo] = useState(false)
+
+  const showToast = (type, msg) => {
+    setToast({ type, msg })
+    setTimeout(() => setToast(null), 3000)
+  }
 
   useEffect(() => {
     apiFetch('/api/perfil/')
@@ -33,10 +41,24 @@ function PerfilView() {
       .catch(() => {})
   }, [])
 
-  const showToast = (type, msg) => {
-    setToast({ type, msg })
-    setTimeout(() => setToast(null), 3000)
-  }
+  useEffect(() => {
+    if (activeTab !== 'modelos') return
+
+    apiFetch('/api/admin/modelos/')
+      .then(r => { if (!r.ok) throw new Error('No se pudo cargar la configuración') ; return r.json() })
+      .then(data => {
+        setModeloConfig(data)
+        setModeloForm({
+          url: data.openwebui_url || '',
+          modelo: data.modelo_activo || '',
+          token: '',
+        })
+      })
+      .catch(() => {
+        setModeloConfig({ online: false, stats: { total_consultas: 0, total_tokens: 0 } })
+        showToast('err', 'No se pudo cargar la configuración de IA. Requiere una cuenta administradora.')
+      })
+  }, [activeTab])
 
   const handleSave = async () => {
     setSaving(true)
@@ -66,12 +88,32 @@ function PerfilView() {
 
   const handleCancel = () => setForm(original)
 
+  const handleSaveModelo = async () => {
+    setSavingModelo(true)
+    try {
+      const res = await apiFetch('/api/admin/modelos/', {
+        method: 'PATCH',
+        body: JSON.stringify(modeloForm),
+      })
+      if (!res.ok) throw new Error('No se pudo guardar la configuración')
+      const data = await res.json()
+      setModeloConfig(prev => ({ ...prev, ...data }))
+      setModeloForm(prev => ({ ...prev, token: '' }))
+      showToast('ok', 'Configuración de IA actualizada')
+    } catch {
+      showToast('err', 'No se pudo guardar la configuración de IA.')
+    } finally {
+      setSavingModelo(false)
+    }
+  }
+
   const initials = form.nombre
     ? form.nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
     : 'JG'
 
   const subTabs = [
     { id: 'info',  label: 'Información Personal', icon: User },
+    { id: 'modelos', label: 'Modelos IA', icon: Cpu },
     { id: 'sys',   label: 'Sistema',               icon: Globe },
   ]
 
@@ -159,6 +201,78 @@ function PerfilView() {
         {/* Right panel */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6 tecsis-scrollbar">
+                        {activeTab === 'modelos' && (
+              <div className="space-y-4 mb-4">
+                <div className="rounded-xl p-6" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h2 className="text-sm font-semibold text-gray-900 mb-1">Motor de Inteligencia Artificial</h2>
+                      <p className="text-xs text-gray-500">Gestión de conexión y modelos de lenguaje.</p>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium"
+                      style={{ 
+                        background: modeloConfig?.online ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', 
+                        color: modeloConfig?.online ? '#16a34a' : '#dc2626',
+                        border: modeloConfig?.online ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(239,68,68,0.2)'
+                      }}>
+                      <span className="w-2 h-2 rounded-full" style={{ background: modeloConfig?.online ? '#22c55e' : '#ef4444' }}></span>
+                      {modeloConfig?.online ? 'Online (OpenWebUI)' : 'Offline'}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 rounded-lg bg-white shadow-sm border border-gray-100">
+                      <div className="text-xs text-gray-500 mb-1 flex items-center gap-1"><RefreshCw size={12}/> Consultas Totales</div>
+                      <div className="text-xl font-bold text-gray-800">{modeloConfig?.stats?.total_consultas || 0}</div>
+                    </div>
+                    <div className="p-4 rounded-lg bg-white shadow-sm border border-gray-100">
+                      <div className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Zap size={12}/> Tokens Procesados</div>
+                      <div className="text-xl font-bold text-gray-800">{modeloConfig?.stats?.total_tokens || 0}</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">URL de OpenWebUI</label>
+                      <input 
+                        type="text" 
+                        value={modeloForm.url} 
+                        onChange={e => setModeloForm(f => ({ ...f, url: e.target.value }))}
+                        className="w-full text-sm px-3 py-2 rounded-lg outline-none bg-white border border-gray-200 focus:border-indigo-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Token de Acceso (Bearer)</label>
+                      <input 
+                        type="password" 
+                        placeholder={modeloConfig?.tiene_token ? "(Token guardado)" : "Ingresa el token"}
+                        value={modeloForm.token} 
+                        onChange={e => setModeloForm(f => ({ ...f, token: e.target.value }))}
+                        className="w-full text-sm px-3 py-2 rounded-lg outline-none bg-white border border-gray-200 focus:border-indigo-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Modelo Activo</label>
+                      <input 
+                        type="text" 
+                        value={modeloForm.modelo} 
+                        onChange={e => setModeloForm(f => ({ ...f, modelo: e.target.value }))}
+                        className="w-full text-sm px-3 py-2 rounded-lg outline-none bg-white border border-gray-200 focus:border-indigo-400"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 flex justify-end">
+                    <button onClick={handleSaveModelo} disabled={savingModelo}
+                      className="flex items-center gap-2 text-sm px-5 py-2.5 rounded-lg font-medium text-white transition-opacity disabled:opacity-50"
+                      style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                      <Save size={16} />
+                      {savingModelo ? 'Guardando...' : 'Aplicar Configuración'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {activeTab === 'sys' && (
               <div className="space-y-4 mb-4">
                 {/* Descripción del sistema */}
@@ -233,7 +347,7 @@ function PerfilView() {
               </div>
             )}
 
-            {activeTab !== 'sys' && (
+            {activeTab === 'info' && (
             <div className="rounded-xl p-6 mb-4"
               style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
               <h2 className="text-sm font-semibold text-gray-900 mb-5">Información Personal</h2>
@@ -287,7 +401,7 @@ function PerfilView() {
           </div>
 
           {/* Footer buttons */}
-          {activeTab !== 'sys' && (
+          {activeTab === 'info' && (
           <div className="flex items-center justify-end gap-3 px-6 py-4 border-t flex-shrink-0"
             style={{ borderColor: 'rgba(0,0,0,0.05)' }}>
             <button onClick={handleCancel}
@@ -316,3 +430,4 @@ function PerfilView() {
 
 
 export default PerfilView
+

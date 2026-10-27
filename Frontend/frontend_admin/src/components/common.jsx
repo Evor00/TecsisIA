@@ -1,10 +1,10 @@
-import { FileCheck, CheckCircle2, Clock, AlertCircle, XCircle, MinusCircle } from 'lucide-react'
-import { TECH_COLORS } from '../data/fallbackData'
+﻿import { FileCheck, CheckCircle2, Clock, AlertCircle, XCircle, MinusCircle } from 'lucide-react'
+import { TECH_COLORS } from '../data/uiConfig'
 
 function MetricCard({ label, value, gradientFrom, iconBg, iconColor, icon: Icon }) {
   return (
-    <div className="relative rounded-xl p-4 overflow-hidden flex flex-col justify-between"
-      style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)', backdropFilter: 'blur(12px)' }}>
+    <div className="academic-metric-card relative rounded-2xl p-4 overflow-hidden flex flex-col justify-between transition-transform duration-200 hover:-translate-y-0.5"
+      style={{ background: 'rgba(255,255,255,.94)', border: '1px solid #e7eaf2', boxShadow: '0 8px 22px rgba(30,41,59,.045)' }}>
       <div className="absolute inset-0 pointer-events-none"
         style={{ background: `linear-gradient(135deg, ${gradientFrom} 0%, transparent 60%)` }} />
       <div className="flex items-center justify-between">
@@ -23,22 +23,26 @@ function MetricCard({ label, value, gradientFrom, iconBg, iconColor, icon: Icon 
   )
 }
 
-function SimilarityCard({ titulo, autor, similitud }) {
+function SimilarityCard({ titulo, autor, similitud, cita, highlighted = false }) {
   return (
-    <div className="rounded-xl p-3 flex items-center gap-3"
-      style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
+    <div className="academic-similarity-card rounded-xl p-3 flex items-center gap-3"
+      style={{
+        background: highlighted ? 'rgba(79,70,229,0.08)' : 'rgba(0,0,0,0.03)',
+        border: highlighted ? '1px solid rgba(79,70,229,0.45)' : '1px solid rgba(0,0,0,0.08)',
+        boxShadow: highlighted ? '0 0 0 3px rgba(79,70,229,0.08)' : 'none',
+      }}>
       <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
         style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(168,85,247,0.2))' }}>
         <FileCheck size={16} style={{ color: '#60a5fa' }} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-gray-900 truncate">{titulo}</div>
-        <div className="text-xs mt-0.5" style={{ color: 'rgba(0,0,0,0.4)' }}>{autor}</div>
+        <div className="text-sm font-semibold text-slate-800 truncate">{titulo}</div>
+        <div className="text-xs mt-0.5" style={{ color: 'rgba(0,0,0,0.4)' }}>{autor}{cita ? ` · ${cita}` : ''}</div>
       </div>
       <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
         <div className="text-lg font-bold" style={{ color: '#34d399' }}>{similitud}%</div>
         <div className="w-16 h-1 rounded-full" style={{ background: 'rgba(0,0,0,0.1)' }}>
-          <div className="h-full rounded-full" style={{ width: `${similitud}%`, background: 'linear-gradient(to right, #10b981, #3b82f6)' }} />
+          <div className="h-full rounded-full" style={{ width: `${similitud}%`, background: similitud >= 75 ? 'linear-gradient(to right,#22c55e,#16a34a)' : similitud >= 50 ? 'linear-gradient(to right,#f59e0b,#d97706)' : 'linear-gradient(to right,#6366f1,#8b5cf6)' }} />
         </div>
       </div>
     </div>
@@ -78,10 +82,10 @@ function EstadoBadge({ estado }) {
 
 function PageBreadcrumb({ icon: Icon, label }) {
   return (
-    <div className="flex items-center gap-2 px-5 py-2.5 border-b flex-shrink-0"
-      style={{ borderColor: 'rgba(0,0,0,0.05)' }}>
-      <Icon size={13} style={{ color: 'rgba(0,0,0,0.3)' }} />
-      <span className="text-xs" style={{ color: 'rgba(0,0,0,0.35)' }}>{label}</span>
+    <div className="academic-breadcrumb flex items-center gap-2 px-6 py-3 border-b flex-shrink-0"
+      style={{ background: 'rgba(255,255,255,.72)', borderColor: '#e8ecf3' }}>
+      <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: '#eef2ff' }}><Icon size={13} style={{ color: '#6366f1' }} /></span>
+      <span className="text-xs font-semibold" style={{ color: '#64748b' }}>{label}</span>
     </div>
   )
 }

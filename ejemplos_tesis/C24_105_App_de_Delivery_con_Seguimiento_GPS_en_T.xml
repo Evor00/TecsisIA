@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tesis>
+  <titulo>App de Delivery con Seguimiento GPS en Tiempo Real — React Native y Node.js</titulo>
+  <autores>
+    <autor>P. Solis</autor>
+    <autor>N. Huanca</autor>
+    <autor>C. Vargas</autor>
+  </autores>
+  <grupo>Grupo Sigma</grupo>
+  <promocion>C24</promocion>
+  <codigo>C24-105</codigo>
+  <estado>Aprobada</estado>
+  <score>90/100</score>
+  <tecnologias>
+    <tecnologia>React Native</tecnologia>
+    <tecnologia>Node.js</tecnologia>
+    <tecnologia>Socket.io</tecnologia>
+    <tecnologia>MongoDB</tecnologia>
+    <tecnologia>Google Maps API</tecnologia>
+  </tecnologias>
+  <resumen>
+    Aplicación móvil de delivery con rastreo GPS en tiempo real del repartidor, sistema de notificaciones push y calificación de pedidos. El backend Node.js gestiona pedidos, rutas y pagos con integración a Izipay. Comunicación en tiempo real mediante Socket.io para actualización del mapa en el cliente.
+  </resumen>
+  <secciones>
+  <seccion titulo="Introducción">
+      El mercado de delivery en Lima creció un 340% durante la pandemia y mantiene una tasa de crecimiento anual del 45%. Sin embargo, la experiencia del usuario en aplicaciones de delivery locales presenta deficiencias en el rastreo en tiempo real y la comunicación con el repartidor. Este proyecto desarrolla una solución completa de delivery con énfasis en la transparencia y experiencia del cliente.
+    </seccion>
+  <seccion titulo="Marco Teórico">
+      React Native permite desarrollar aplicaciones móviles nativas para iOS y Android compartiendo el 95% del código. Socket.io implementa comunicación bidireccional en tiempo real mediante WebSockets con fallback a long-polling. La API de Google Maps proporciona geocodificación, cálculo de rutas óptimas y renderizado de mapas. MongoDB es ideal para documentos de pedidos con esquemas flexibles.
+    </seccion>
+  <seccion titulo="Metodología">
+      Se desarrollaron 3 aplicaciones: cliente (usuario final), repartidor y panel de administración web. El backend Node.js con Express gestiona los pedidos en MongoDB Atlas. La ubicación del repartidor se actualiza cada 3 segundos mediante Socket.io. Se implementó el algoritmo Dijkstra modificado para asignación óptima de repartidores considerando distancia y carga de trabajo.
+    </seccion>
+  <seccion titulo="Resultados">
+      En 2 meses de piloto con 15 repartidores se procesaron 3,400 pedidos con una tasa de entrega exitosa del 97.8%. El tiempo promedio de entrega fue de 28 minutos. La calificación promedio de la experiencia fue 4.6/5. El sistema soportó picos de 200 pedidos simultáneos sin degradación del servicio.
+    </seccion>
+  <seccion titulo="Conclusiones">
+      La aplicación de delivery demostró la viabilidad técnica de implementar rastreo GPS en tiempo real con Stack JavaScript full-stack. La arquitectura basada en eventos con Socket.io permitió escalabilidad horizontal eficiente. Se recomienda incorporar predicción de demanda por zona y horario para optimizar la distribución previa de repartidores.
+    </seccion>
+  </secciones>
+</tesis>

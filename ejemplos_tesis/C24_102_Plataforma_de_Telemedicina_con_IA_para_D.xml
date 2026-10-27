@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tesis>
+  <titulo>Plataforma de Telemedicina con IA para Diagnóstico Dermatológico — Flutter y FastAPI</titulo>
+  <autores>
+    <autor>A. Mendoza</autor>
+    <autor>R. Ccori</autor>
+  </autores>
+  <grupo>Grupo Beta</grupo>
+  <promocion>C24</promocion>
+  <codigo>C24-102</codigo>
+  <estado>Aprobada</estado>
+  <score>96/100</score>
+  <tecnologias>
+    <tecnologia>Flutter</tecnologia>
+    <tecnologia>FastAPI</tecnologia>
+    <tecnologia>TensorFlow</tecnologia>
+    <tecnologia>PostgreSQL</tecnologia>
+    <tecnologia>AWS</tecnologia>
+  </tecnologias>
+  <resumen>
+    Aplicación móvil multiplataforma que permite a pacientes fotografiar lesiones de piel y recibir un diagnóstico preliminar usando un modelo CNN entrenado con el dataset HAM10000. El backend en FastAPI gestiona autenticación, histórico médico y comunicación con el médico. Desplegada en AWS con almacenamiento S3.
+  </resumen>
+  <secciones>
+  <seccion titulo="Introducción">
+      Las enfermedades dermatológicas afectan al 30% de la población peruana, pero el acceso a especialistas en zonas rurales es limitado. La inteligencia artificial ha demostrado capacidad comparable a dermatólogos expertos en la clasificación de lesiones cutáneas. Este proyecto desarrolla una plataforma accesible que combina IA y telemedicina para democratizar el diagnóstico dermatológico.
+    </seccion>
+  <seccion titulo="Marco Teórico">
+      Las redes neuronales convolucionales (CNN) son el estándar en visión computacional para clasificación de imágenes médicas. EfficientNet-B4 fue seleccionada por su equilibrio entre precisión y eficiencia computacional. Flutter permite desarrollar aplicaciones para iOS y Android desde una sola base de código. FastAPI es un framework moderno de Python para APIs REST con validación automática mediante Pydantic.
+    </seccion>
+  <seccion titulo="Metodología">
+      El dataset HAM10000 (10,015 imágenes dermoscópicas) fue preprocesado con técnicas de data augmentation. Se implementó transfer learning partiendo de EfficientNet-B4 preentrenada en ImageNet. El entrenamiento utilizó GPU Tesla T4 en Google Colab durante 40 épocas. La app Flutter captura la imagen, la envía al API FastAPI en AWS EC2, y muestra el resultado con un mapa de calor Grad-CAM.
+    </seccion>
+  <seccion titulo="Resultados">
+      El modelo alcanzó 89.3% de accuracy en clasificación de 7 tipos de lesiones. El tiempo de diagnóstico desde la captura es de 2.1 segundos. En pruebas con 80 pacientes voluntarios, el 94% consideró la interfaz intuitiva y el 87% afirmó que usaría la app como complemento a una consulta médica.
+    </seccion>
+  <seccion titulo="Conclusiones">
+      La plataforma demuestra la viabilidad de la IA como herramienta de apoyo diagnóstico en dermatología. La precisión del 89.3% es comparable a estudios similares publicados en literatura científica. Se recomienda recopilar datos de pacientes peruanos para fine-tuning del modelo y mejorar la representatividad étnica del dataset.
+    </seccion>
+  </secciones>
+</tesis>

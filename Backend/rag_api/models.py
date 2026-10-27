@@ -35,7 +35,7 @@ class Tesis(models.Model):
                        )
     fecha_subida     = models.DateTimeField(auto_now_add=True)
     similitud_maxima = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    score            = models.CharField(max_length=10, null=True, blank=True)
+    score            = models.CharField(max_length=30, null=True, blank=True)
     activo           = models.BooleanField(default=True)
     created_at       = models.DateTimeField(auto_now_add=True)
     updated_at       = models.DateTimeField(auto_now=True)

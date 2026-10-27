@@ -1,0 +1,46 @@
+name: Verify TecSis-IA
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+          cache-dependency-path: Backend/requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: Frontend/frontend_admin/package-lock.json
+
+      - name: Install backend dependencies
+        run: python -m pip install -r Backend/requirements.txt
+
+      - name: Verify Django and unit tests
+        working-directory: Backend
+        env:
+          DJANGO_SECRET_KEY: ci-only-secret-not-for-production
+          DJANGO_DEBUG: 'True'
+        run: |
+          python manage.py check
+          python manage.py test rag_api
+
+      - name: Install frontend dependencies
+        working-directory: Frontend/frontend_admin
+        run: npm ci
+
+      - name: Lint and build frontend
+        working-directory: Frontend/frontend_admin
+        run: |
+          npm run lint
+          npm run build

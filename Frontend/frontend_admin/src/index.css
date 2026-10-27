@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #17233c;
+  background: #f5f7fb;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -7,6 +13,11 @@
 body {
   margin: 0;
   padding: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 82% -10%, rgba(196,181,253,.28), transparent 30rem),
+    radial-gradient(circle at 10% 100%, rgba(191,219,254,.32), transparent 28rem),
+    #f5f7fb;
 }
 
 #root {
@@ -19,15 +30,191 @@ textarea::placeholder {
 }
 
 .tecsis-scrollbar::-webkit-scrollbar {
-  width: 3px;
+  width: 8px;
+  height: 8px;
 }
 .tecsis-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .tecsis-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 2px;
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 .tecsis-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+  background: #a5b4fc;
+}
+
+.academic-grid {
+  background-image: linear-gradient(rgba(99,102,241,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,.035) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+/* Modo Astra: conserva los acentos índigo/cian y oscurece las superficies
+   académicas sin alterar los colores de estado (aprobado, observado, etc.). */
+.theme-dark {
+  background-image:
+    radial-gradient(circle at 75% -10%, rgba(6,182,212,.18), transparent 28rem),
+    radial-gradient(circle at 5% 100%, rgba(67,56,202,.25), transparent 32rem),
+    linear-gradient(rgba(56,189,248,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,.035) 1px, transparent 1px) !important;
+}
+
+.theme-dark .academic-view,
+.theme-dark .academic-view > div,
+.theme-dark .academic-view > div > div {
+  background: #091525 !important;
+}
+
+.theme-dark .academic-view [style*="background: rgb(255, 255, 255)"],
+.theme-dark .academic-view [style*="background: rgb(248, 250, 252)"],
+.theme-dark .academic-view [style*="background: rgb(244, 245, 247)"],
+.theme-dark .academic-view [style*="background: rgba(255"],
+.theme-dark .academic-view [style*="background: rgba(248"],
+.theme-dark .academic-view .bg-white,
+.theme-dark .academic-view .bg-gray-50,
+.theme-dark .academic-view .bg-gray-50\/50 {
+  background: #0e2035 !important;
+  border-color: rgba(56,189,248,.16) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18) !important;
+}
+
+.theme-dark .academic-view [style*="color: rgba(0"],
+.theme-dark .academic-view [style*="color: rgb(15"],
+.theme-dark .academic-view [style*="color: rgb(30"],
+.theme-dark .academic-view [style*="color: rgb(51"] {
+  color: #b9c9df !important;
+}
+
+.theme-dark .academic-view .text-gray-900,
+.theme-dark .academic-view .text-slate-800,
+.theme-dark .academic-view .text-slate-700 {
+  color: #e5eefc !important;
+}
+
+.theme-dark .academic-view .text-slate-500,
+.theme-dark .academic-view .text-slate-400,
+.theme-dark .academic-view .text-gray-500,
+.theme-dark .academic-view .text-gray-600,
+.theme-dark .academic-view .text-gray-400 {
+  color: #9fb1ca !important;
+}
+
+.theme-dark .academic-view .border-gray-100,
+.theme-dark .academic-view .border-gray-200,
+.theme-dark .academic-view .border-gray-50 {
+  border-color: rgba(56,189,248,.15) !important;
+}
+
+.theme-dark .academic-view input,
+.theme-dark .academic-view textarea,
+.theme-dark .academic-view select {
+  color-scheme: dark;
+  color: #dbeafe !important;
+}
+
+.theme-dark .academic-view textarea::placeholder,
+.theme-dark .academic-view input::placeholder {
+  color: #7c93b2 !important;
+}
+
+/* Superficies que se repiten en Historial, Proyectos y Comparador. Se usan
+   clases propias para que el tema no dependa de cómo el navegador serializa
+   un estilo inline de React. */
+.theme-dark .academic-breadcrumb {
+  background: #0d1d31 !important;
+  border-color: rgba(56,189,248,.18) !important;
+}
+
+.theme-dark .academic-breadcrumb > span:last-child {
+  color: #b9c9df !important;
+}
+
+.theme-dark .academic-metric-card,
+.theme-dark .academic-similarity-card,
+.theme-dark .academic-comparator .bg-white,
+.theme-dark .academic-comparator .bg-gray-50,
+.theme-dark .academic-comparator .bg-gray-50\/50 {
+  background: #0e2035 !important;
+  border-color: rgba(56,189,248,.16) !important;
+}
+
+.theme-dark .academic-comparator > .bg-gray-50\/50,
+.theme-dark .academic-comparator > div:nth-child(2) {
+  background: #091525 !important;
+}
+
+.theme-dark .academic-chat-toolbar {
+  background: #0d1d31 !important;
+  border-color: rgba(56,189,248,.18) !important;
+}
+
+.theme-dark .academic-chat-toolbar [style*="color: rgba(0"] {
+  color: #9fb1ca !important;
+}
+
+.theme-dark .academic-chat-composer {
+  background-image: linear-gradient(to top, #091525 54%, #091525 72%, transparent) !important;
+}
+
+.theme-dark .academic-chat-input {
+  background: #0e2035 !important;
+  border-color: rgba(56,189,248,.25) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.30) !important;
+}
+
+.theme-dark .academic-chat-input textarea {
+  background: transparent !important;
+  color: #e5eefc !important;
+}
+
+.theme-dark .academic-chat-input > div:last-child {
+  border-color: rgba(56,189,248,.14) !important;
+}
+
+.theme-dark .academic-chat .chat-bubble [style*="color: rgb(51"] {
+  color: #dbeafe !important;
+}
+
+.theme-dark .academic-projects,
+.theme-dark .academic-history,
+.theme-dark .academic-comparator {
+  background: #091525 !important;
+}
+
+/* El espacio de la bienvenida se reduce en laptops bajas: las cuatro acciones
+   quedan sobre el compositor, sin tener que hacer scroll solo para verlas. */
+@media (max-height: 820px) {
+  .academic-chat-composer {
+    padding-top: 1.25rem !important;
+    padding-bottom: .75rem !important;
+  }
+
+  .academic-chat-empty {
+    padding-top: 2rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .academic-chat-empty > div:first-child {
+    width: 4rem !important;
+    height: 4rem !important;
+    margin-bottom: 1rem !important;
+    border-radius: 1.25rem !important;
+  }
+
+  .academic-chat-empty > p {
+    margin-bottom: .65rem !important;
+  }
+
+  .academic-chat-empty > h1 {
+    font-size: 1.75rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .academic-chat-empty > .grid {
+    gap: .6rem !important;
+  }
+
+  .academic-chat-empty > .grid > button {
+    padding: .8rem !important;
+  }
 }

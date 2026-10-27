@@ -1,13 +1,18 @@
 venv/
 __pycache__/
 *.pyc
+*.sqlite3
 .env
 node_modules/
 dist/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+*.log
 
 # Archivos generados para presentacion/documentacion
 Diagrama_Gantt_TecSisIA.xlsx
 ESTUDIO_CODIGO.md
 MER_TecSisIA_ordenado.png
 MER_TecSisIA.svg
-tools/

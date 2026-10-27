@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tesis>
+  <titulo>Plataforma de Análisis de Sentimientos en Redes Sociales para Marketing Digital</titulo>
+  <autores>
+    <autor>K. Medina</autor>
+    <autor>T. Ríos</autor>
+  </autores>
+  <grupo>Grupo Omega</grupo>
+  <promocion>C24</promocion>
+  <codigo>C24-110</codigo>
+  <estado>Aprobada</estado>
+  <score>89/100</score>
+  <tecnologias>
+    <tecnologia>Python</tecnologia>
+    <tecnologia>React</tecnologia>
+    <tecnologia>Twitter API</tecnologia>
+    <tecnologia>BERT</tecnologia>
+    <tecnologia>Elasticsearch</tecnologia>
+  </tecnologias>
+  <resumen>
+    Dashboard de análisis de sentimientos que monitorea menciones de marcas en Twitter/X, Instagram y Facebook en tiempo real. Usa el modelo RoBERTa fine-tuneado para clasificación de sentimientos en español con detección de emociones (alegría, enojo, tristeza, sorpresa). Los resultados se indexan en Elasticsearch para búsqueda y análisis histórico.
+  </resumen>
+  <secciones>
+  <seccion titulo="Introducción">
+      Las empresas peruanas invierten en promedio S/. 85,000 anuales en marketing digital sin métricas claras del impacto en la percepción de marca. El monitoreo manual de redes sociales es inviable dado el volumen de menciones. Este proyecto desarrolla una plataforma automatizada de social listening con análisis de sentimientos mediante IA para medir el pulso de la audiencia en tiempo real.
+    </seccion>
+  <seccion titulo="Marco Teórico">
+      El análisis de sentimientos es una rama del NLP que clasifica texto según la polaridad emocional expresada. RoBERTa (Robustly Optimized BERT Approach) supera a BERT original en benchmarks de NLP. Elasticsearch proporciona búsqueda full-text e indexación en tiempo real con capacidad para millones de documentos. Apache Airflow orquesta los pipelines de ingesta de datos de múltiples plataformas.
+    </seccion>
+  <seccion titulo="Metodología">
+      Se conectaron las APIs de Twitter v2, Instagram Graph API y Facebook Graph API para ingesta de menciones. RoBERTa-large-bne fue fine-tuneado con 50,000 tweets en español con etiquetas de sentimiento manual. Un pipeline Airflow ingesta y procesa 50,000 menciones diarias. Elasticsearch almacena los análisis para queries históricos. El dashboard React muestra tendencias, word clouds y mapas de calor por horario.
+    </seccion>
+  <seccion titulo="Resultados">
+      El modelo alcanzó 88.4% de accuracy en clasificación de sentimientos y 83.1% en detección de emociones. El sistema procesó en promedio 127,000 menciones diarias de 10 marcas piloto. 3 marcas detectaron crisis de reputación emergente a través del sistema con 4 horas de anticipación respecto al monitoreo manual.
+    </seccion>
+  <seccion titulo="Conclusiones">
+      La plataforma de análisis de sentimientos demostró ser una herramienta estratégica para la gestión de marca en redes sociales. La detección temprana de crisis justifica por sí sola la inversión en el sistema. Se recomienda incorporar análisis de influencers y detección automática de temas virales para complementar las capacidades de social listening.
+    </seccion>
+  </secciones>
+</tesis>

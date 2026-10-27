@@ -1,38 +1,50 @@
-"""
-Token-based auth helpers for TecSis-IA.
-Tokens live in memory (fine for a single-process dev/demo server).
-"""
+"""Tokens firmados para TecSis-IA, válidos aun tras reiniciar el servidor."""
+import hashlib
+import hmac
 import secrets
 import time
+
+from django.conf import settings
 
 from django.contrib.auth.hashers import check_password, make_password  # noqa: F401 (make_password exported for mgmt)
 from rest_framework.response import Response
 from rest_framework import status
 
-# {token: {'user_id': int, 'expires': float}}
+# Conserva únicamente revocaciones del proceso actual. La validez normal se
+# obtiene de la firma, por eso no depende de memoria y sobrevive a reinicios.
 _TOKEN_STORE: dict[str, dict] = {}
 
 TOKEN_TTL = 60 * 60 * 8  # 8 horas
 
 
 def create_token(user_id: int) -> str:
-    token = secrets.token_hex(32)
-    _TOKEN_STORE[token] = {'user_id': user_id, 'expires': time.time() + TOKEN_TTL}
+    expires = int(time.time() + TOKEN_TTL)
+    payload = f'{user_id}.{expires}.{secrets.token_hex(16)}'
+    signature = hmac.new(settings.SECRET_KEY.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    token = f'{payload}.{signature}'
+    _TOKEN_STORE[token] = {'expires': expires}
     return token
 
 
 def resolve_token(token: str) -> int | None:
     entry = _TOKEN_STORE.get(token)
-    if not entry:
+    if entry and entry.get('revoked'):
         return None
-    if time.time() > entry['expires']:
+    try:
+        user_id, expires, nonce, signature = token.split('.', 3)
+        payload = f'{user_id}.{expires}.{nonce}'
+        expected = hmac.new(settings.SECRET_KEY.encode(), payload.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected) or time.time() > int(expires):
+            _TOKEN_STORE.pop(token, None)
+            return None
+    except (TypeError, ValueError):
         _TOKEN_STORE.pop(token, None)
         return None
-    return entry['user_id']
+    return int(user_id)
 
 
 def revoke_token(token: str) -> None:
-    _TOKEN_STORE.pop(token, None)
+    _TOKEN_STORE[token] = {'revoked': True}
 
 
 def get_token_from_request(request) -> str | None:

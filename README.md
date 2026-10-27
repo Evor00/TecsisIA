@@ -1,137 +1,147 @@
-# TecSis-IA
+﻿# TecSis-IA
 
 Plataforma web de gestión documental y búsqueda semántica de tesis para la carrera de Diseño y Desarrollo de Software. Combina un panel administrativo en React con un motor de Inteligencia Artificial local (RAG) que permite realizar consultas en lenguaje natural sobre el repositorio de proyectos.
 
 ---
 
-## Requisitos previos
+## Stack tecnológico
 
-Antes de instalar, asegúrate de tener lo siguiente:
-
-| Herramienta | Versión mínima | Descarga |
-|---|---|---|
-| Python | 3.11+ | https://www.python.org/downloads/ |
-| Node.js | 18+ | https://nodejs.org/ |
-| PostgreSQL | 15+ | https://www.postgresql.org/download/ |
-| pgvector | 0.7+ | https://github.com/pgvector/pgvector |
-| pgAdmin 4 | cualquiera | incluido con PostgreSQL |
-
-> **Windows**: durante la instalación de PostgreSQL, anota bien la contraseña que le pones al usuario `postgres`. La necesitarás más adelante.
+| Capa | Tecnología |
+|---|---|
+| Frontend | React 19 + Vite 8 + Tailwind CSS 4 |
+| Backend | Django 6 + Django REST Framework 3.17 |
+| Base de datos | PostgreSQL 18 + pgvector 0.8.6 |
+| Modelo de IA | paraphrase-multilingual-MiniLM-L12-v2 (384 dims, local) |
+| Extracción PDF | pypdf |
+| Búsqueda vectorial | pgvector con índice HNSW y distancia coseno |
 
 ---
 
-## 1. Instalar la extensión pgvector
+## Requisitos previos
 
-pgvector es la extensión de PostgreSQL que permite almacenar y buscar vectores de embedding. Sin ella el sistema no funciona.
+| Herramienta | Versión usada | Descarga |
+|---|---|---|
+| Python | 3.14.7 | https://www.python.org/downloads/ |
+| Node.js | 24.21.0 | https://nodejs.org/ |
+| PostgreSQL | 18 | https://www.postgresql.org/download/ |
+| pgvector | 0.8.6 | https://github.com/pgvector/pgvector |
+| pgAdmin 4 | cualquiera | incluido con PostgreSQL |
+| Git | cualquiera | https://git-scm.com/download/win |
+| Visual Studio Build Tools | 2022 | https://visualstudio.microsoft.com/visual-cpp-build-tools/ |
 
-**Opción A — Instalador precompilado (Windows, recomendado):**
+> **Windows**: durante la instalación de PostgreSQL, anota la contraseña del usuario `postgres`. La necesitarás en los pasos siguientes.
 
-1. Ve a https://github.com/pgvector/pgvector/releases
-2. Descarga el archivo `.zip` que corresponda a tu versión de PostgreSQL (Ej: `pgvector-pg15-win.zip`)
-3. Copia `vector.dll` a `C:\Program Files\PostgreSQL\15\lib\`
-4. Copia `vector.control` y los archivos `vector--*.sql` a `C:\Program Files\PostgreSQL\15\share\extension\`
-5. Reinicia el servicio de PostgreSQL desde el Administrador de servicios de Windows
+---
 
-**Verificar que está disponible:**
+## Instalación rapida (scripts automatizados)
 
+El proyecto incluye cuatro scripts `.bat` para preparar y verificar el entorno:
+
+| Script | Descripcion |
+|---|---|
+| `db_setup.bat` | Crea o valida la BD y aplica solo los parches que faltan |
+| `setup.bat` | Crea el venv e instala dependencias Python y Node desde sus lockfiles |
+| `verify.bat` | Ejecuta checks Django, pruebas, lint y build del frontend |
+| `start.bat` | Levanta el backend (Django :8000) y frontend (Vite :5173) en paralelo |
+
+### Orden de ejecucion:
+1. Instalar PostgreSQL + pgvector (ver seccion 1 abajo)
+2. Ejecutar `db_setup.bat` como administrador
+3. Ejecutar `setup.bat`
+4. Ejecutar `verify.bat`
+5. Ejecutar `start.bat`
+
+---
+
+## 1. Instalar pgvector (compilacion desde fuente en Windows)
+
+pgvector no tiene instalador precompilado para PostgreSQL 18. Requiere compilacion manual.
+
+### Prerequisitos para compilar:
+- Git: https://git-scm.com/download/win
+- Visual Studio Build Tools 2022 con workload **"Desarrollo para escritorio con C++"**
+
+### Pasos (ejecutar en CMD como administrador):
+
+```cmd
+set "PGROOT=C:\Program Files\PostgreSQL\18"
+cd %TEMP%
+git clone --branch v0.8.6 https://github.com/pgvector/pgvector.git
+cd pgvector
+nmake /F Makefile.win
+nmake /F Makefile.win install
+```
+
+> Si nmake no se reconoce, abrir el **"Developer Command Prompt for VS 2022"** desde el menu inicio.
+
+### Verificar en pgAdmin:
 ```sql
--- Ejecutar en pgAdmin
 SELECT * FROM pg_available_extensions WHERE name = 'vector';
--- Debe aparecer una fila
+-- Debe aparecer una fila con version 0.8.6
 ```
 
 ---
 
 ## 2. Configurar la base de datos
 
-### 2.1 Crear la base de datos
+### Opcion A — Script automatico (recomendado)
+Ejecutar `db_setup.bat` como administrador desde la raiz del proyecto.
 
-Abre pgAdmin 4, conecta al servidor local y ejecuta:
+### Opcion B — Manual en pgAdmin
 
+**2.1 Crear la base de datos:**
 ```sql
-CREATE DATABASE tecsisai
-    ENCODING = 'UTF8'
-    LC_COLLATE = 'es_PE.UTF-8'
-    LC_CTYPE   = 'es_PE.UTF-8';
+CREATE DATABASE tecsisai ENCODING = 'UTF8' TEMPLATE = template0;
 ```
 
-> Si el locale `es_PE.UTF-8` no está disponible en tu sistema, usa `C` como alternativa:
-> ```sql
-> CREATE DATABASE tecsisai ENCODING = 'UTF8' TEMPLATE = template0;
-> ```
-
-### 2.2 Ejecutar el schema principal
-
-En pgAdmin, conecta a la base de datos `tecsisai` y abre el archivo:
-
-```
-Backend/database/tecsisai_schema.sql
+**2.2 Habilitar pgvector:**
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-Ejecútalo completo (F5 o botón "Execute"). Este script crea:
-- Schema `tecsisai` y sus tablas (`usuarios`, `tesis`, `documentos_rag`, `log_consultas`)
-- Triggers (auto-código de tesis, updated_at)
-- Stored procedure `sp_obtener_metricas_dashboard()`
-- Datos de prueba iniciales (3 usuarios, 6 tesis, logs de consulta)
+**2.3 Cargar el schema:**
+Abrir y ejecutar `Backend/database/tecsisai_schema.sql`
 
-### 2.3 Aplicar el parche de vectores
-
-El schema original usa `vector(1536)` (dimensión OpenAI). El modelo de IA local que usa este proyecto genera vectores de 384 dimensiones. Ejecuta el parche:
-
-```
-Backend/database/patch_vector_384.sql
+**2.4 Aplicar parche de vectores (384 dims):**
+```sql
+-- Ejecutar: Backend/database/patch_vector_384.sql
+-- Cambia embedding de vector(1536) a vector(384) para el modelo local
 ```
 
-Esto modifica la columna `embedding` a `vector(384)` y recrea el índice HNSW.
-
-### 2.4 Aplicar el parche de constraint de abstract
-
-**Este paso es obligatorio.** El schema original limita `pagina_origen > 0`, pero el sistema usa el valor `0` para almacenar el resumen/abstract de proyectos registrados manualmente. Sin este parche, registrar un proyecto con resumen lanzará un error de PostgreSQL.
-
-```
-Backend/database/patch_abstract_constraint.sql
-```
-
-### 2.6 (Opcional) Cargar datos extra
-
-Para tener más tesis de demostración, ejecuta:
-
-```
-Backend/database/seed_datos_extra.sql
+**2.5 Aplicar los parches restantes:**
+```sql
+-- Ejecutar en este orden:
+-- Backend/database/patch_abstract_constraint.sql
+-- Backend/database/patch_columnas_tesis.sql
+-- Backend/database/patch_activo.sql
+-- Backend/database/patch_auth_passwords.sql
+-- Backend/database/patch_conversaciones.sql
 ```
 
-Agrega 10 tesis adicionales (C24-007 a C24-016) y más entradas en el historial de consultas.
-
-### 2.7 (Opcional) Aplicar parche de columnas adicionales
-
-Si algunas columnas como `grupo`, `tecnologias`, `similitud_maxima` o `score` no están en tu schema, ejecuta:
-
-```
-Backend/database/patch_columnas_tesis.sql
+**2.6 (Opcional) Datos extra de demo:**
+```sql
+-- Ejecutar: Backend/database/seed_datos_extra.sql
+-- Agrega 10 tesis adicionales (C24-007 a C24-016)
 ```
 
 ---
 
-## 3. Configurar el backend (Django)
+## 3. Configurar el Backend (Django)
 
 ### 3.1 Crear el entorno virtual
 
-```bash
+```powershell
 cd Backend
 python -m venv venv
 ```
 
-Activar el entorno:
-
-```bash
-# Windows PowerShell
+Activar:
+```powershell
+# PowerShell
 venv\Scripts\Activate.ps1
 
-# Windows CMD
+# CMD
 venv\Scripts\activate.bat
-
-# Linux / macOS
-source venv/bin/activate
 ```
 
 ### 3.2 Instalar dependencias
@@ -140,157 +150,170 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> La primera instalación descarga `torch` y `sentence-transformers` (~1 GB). Ten paciencia.
-> Si `torch` falla en Windows, instálalo manualmente primero:
-> ```bash
-> pip install torch --index-url https://download.pytorch.org/whl/cpu
-> ```
+> La primera instalacion descarga torch y sentence-transformers (~1 GB). Ten paciencia.
 
-### 3.3 Configurar la conexión a PostgreSQL
+### 3.3 Configurar conexion a PostgreSQL
 
-Abre `Backend/core_backend/settings.py` y edita el bloque `DATABASES`:
+Copiar `Backend/.env.example` como `Backend/.env` y completar la conexión:
 
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tecsisai',     # nombre de la base de datos
-        'USER': 'postgres',     # usuario de PostgreSQL
-        'PASSWORD': 'TU_CONTRASEÑA',  # <-- cambia esto
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
+```dotenv
+POSTGRES_DB=tecsisai
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=TU_CONTRASENA
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
 ```
 
-### 3.4 Ejecutar el servidor Django
+> No subas `Backend/.env` ni claves de OpenWebUI/Gemini al repositorio. El archivo
+> `.env.example` solo contiene marcadores de ejemplo.
+
+### 3.4 Aplicar migraciones y levantar servidor
 
 ```bash
-# Desde la carpeta Backend/ con el venv activado
 python manage.py migrate
 python manage.py runserver
 ```
 
-El backend quedará corriendo en `http://localhost:8000`.
-
-> **Nota**: `migrate` solo aplica las migraciones de Django (sesiones, admin, etc.). Las tablas del proyecto ya las creaste con el SQL del paso 2.
+Backend disponible en `http://localhost:8000`
 
 ---
 
-## 4. Configurar el frontend (React + Vite)
-
-### 4.1 Instalar dependencias
+## 4. Configurar el Frontend (React + Vite)
 
 ```bash
 cd Frontend/frontend_admin
 npm install
-```
-
-### 4.2 Iniciar el servidor de desarrollo
-
-```bash
 npm run dev
 ```
 
-El frontend estará disponible en `http://localhost:5173`.
+Frontend disponible en `http://localhost:5173`
 
-> Vite redirige automáticamente `/api/*` al backend en `localhost:8000`, por lo que no necesitas cambiar ninguna URL.
-
----
-
-## 5. Verificar que todo funciona
-
-Con ambos servidores corriendo, abre `http://localhost:5173` y comprueba:
-
-1. **Dashboard** — Deben aparecer las métricas (total tesis, aprobadas, en revisión, etc.)
-2. **Proyectos** — Deben listarse las 6+ tesis del seed data con sus estados
-3. **Chat IA** — Escribe `lista de tesis registradas` y deben aparecer los proyectos
-4. **Historial** — Deben aparecer las consultas registradas en `log_consultas`
+> Vite redirige automaticamente `/api/*` al backend en `localhost:8000`.
 
 ---
 
-## 6. Cómo usar las funciones principales
+## 5. Crear usuario administrador
 
-### Registrar un proyecto con XML
+```bash
+# Con el venv activado, desde la carpeta Backend/
+python manage.py createsuperuser
+```
 
-1. Ve a la sección **Proyectos**
-2. Clic en **Registrar proyecto**
-3. Clic en **XML — autocompletar** y selecciona `Backend/database/proyecto_demo.xml`
-4. Los campos se llenan automáticamente
-5. Opcionalmente adjunta un PDF para indexar su contenido completo
-6. Clic en **Registrar proyecto**
+---
 
-### Subir un PDF para búsqueda semántica
+## 6. Verificar que todo funciona
 
-Al registrar un proyecto, adjunta el PDF en el modal. El sistema:
-1. Registra la tesis en la base de datos
-2. Extrae el texto del PDF página por página con `pypdf`
-3. Genera embeddings con `paraphrase-multilingual-MiniLM-L12-v2` (modelo local, sin costo de API)
-4. Almacena los vectores en PostgreSQL con pgvector
+Con ambos servidores corriendo, abrir `http://localhost:5173`:
 
-### Buscar en lenguaje natural
-
-El chat soporta:
-- Consultas de listado: `muéstrame todas las tesis`, `lista de proyectos aprobados`
-- Búsqueda semántica: `sistemas de gestión con microservicios`, `aplicaciones móviles para salud`
-- El motor calcula similitud coseno contra los embeddings almacenados en pgvector
+1. **Login** — Ingresar con el usuario creado en el paso 5
+2. **Dashboard** — Deben aparecer metricas (total tesis, aprobadas, en revision, etc.)
+3. **Proyectos** — Deben listarse las tesis del seed data con sus estados
+4. **Chat IA** — Escribir `lista de tesis registradas` y deben aparecer los proyectos
+5. **Historial** — Deben aparecer las consultas registradas en `log_consultas`
 
 ---
 
 ## 7. Estructura del proyecto
 
 ```
-TecsisAi/
+TecsisAi-2/
+├── setup.bat                    ← Configura venv + dependencias + migraciones
+├── start.bat                    ← Levanta backend y frontend en paralelo
+├── db_setup.bat                 ← Crea BD y aplica schema + parches SQL
 ├── Backend/
-│   ├── core_backend/         # Configuración Django (settings, urls)
-│   ├── rag_api/              # App principal: modelos, vistas, urls
-│   ├── database/             # Scripts SQL
-│   │   ├── tecsisai_schema.sql      # Schema completo + seed data
-│   │   ├── patch_vector_384.sql     # Ajuste de dimensión de embeddings
-│   │   ├── patch_columnas_tesis.sql # Columnas adicionales (grupo, tecnologias)
-│   │   ├── seed_datos_extra.sql     # 10 tesis adicionales para demo
-│   │   └── proyecto_demo.xml        # XML de ejemplo para importar
+│   ├── .env                     ← Variables de entorno (OpenWebUI URL/token)
+│   ├── manage.py
 │   ├── requirements.txt
-│   └── manage.py
+│   ├── core_backend/            ← Configuracion Django (settings, urls)
+│   ├── rag_api/                 ← App principal
+│   │   ├── models.py            ← Modelos Django
+│   │   ├── views.py             ← API endpoints (RAG, auth, tesis, etc.)
+│   │   ├── urls.py              ← Rutas de la API
+│   │   ├── llm_client.py        ← Cliente para OpenWebUI
+│   │   ├── auth.py              ← Autenticacion por sesion
+│   │   └── management/commands/ ← Comando reindex_rag
+│   └── database/
+│       ├── tecsisai_schema.sql       ← Schema completo + seed data inicial
+│       ├── patch_vector_384.sql      ← Ajuste dimension embeddings (1536→384)
+│       ├── patch_abstract_constraint.sql ← Permite resumenes manuales
+│       ├── patch_columnas_tesis.sql  ← Columnas extra (grupo, tecnologias)
+│       ├── patch_conversaciones.sql  ← Historial de conversaciones
+│       ├── seed_datos_extra.sql      ← 10 tesis adicionales para demo
+│       ├── ejemplo_tesis.xml         ← XML de ejemplo para importar
+│       └── proyecto_demo.xml         ← XML demo completo
 └── Frontend/
     └── frontend_admin/
         ├── src/
-        │   └── App.jsx       # Toda la UI (panel, chat, modales)
-        ├── vite.config.js    # Proxy /api → localhost:8000
+        │   ├── views/               ← Pantallas principales
+        │   │   ├── LoginScreen.jsx
+        │   │   ├── DashboardChatView.jsx
+        │   │   ├── ProyectosView.jsx
+        │   │   ├── HistorialView.jsx
+        │   │   └── PerfilView.jsx
+        │   ├── components/          ← Componentes reutilizables
+        │   │   └── common.jsx
+        │   ├── services/            ← Llamadas a la API
+        │   │   └── api.js
+        │   ├── utils/               ← Utilitarios
+        │   │   └── similarity.js
+        │   ├── data/                ← Datos de fallback
+        │   │   └── fallbackData.js
+        │   ├── App.jsx
+        │   └── main.jsx
+        ├── vite.config.js           ← Proxy /api → localhost:8000
         └── package.json
 ```
 
 ---
 
-## 8. Stack tecnológico
+## 8. Comandos utiles
 
-| Capa | Tecnología |
-|---|---|
-| Frontend | React 19 + Vite 8 + Tailwind CSS 4 |
-| Backend | Django 6 + Django REST Framework 3.17 |
-| Base de datos | PostgreSQL 15 + pgvector |
-| Modelo de IA | `paraphrase-multilingual-MiniLM-L12-v2` (384 dims, local) |
-| Extracción PDF | pypdf |
-| Búsqueda vectorial | pgvector con índice HNSW y distancia coseno |
+```bash
+# Regenerar embeddings de todos los documentos RAG
+python manage.py reindex_rag
+
+# Regenerar embeddings forzando recalculo
+python manage.py reindex_rag --force
+
+# Descargar y comprobar el modelo de embeddings antes de atender usuarios
+python manage.py warm_rag_model
+
+# Crear superusuario admin
+python manage.py createsuperuser
+
+# Ver logs en tiempo real del backend
+python manage.py runserver --verbosity=2
+```
 
 ---
 
-## 9. Solución de problemas comunes
+## 9. Solucion de problemas
 
 **`django.db.utils.OperationalError: connection refused`**
-→ PostgreSQL no está corriendo. Verifica el servicio en el Administrador de servicios de Windows.
+→ PostgreSQL no esta corriendo. Verifica el servicio en el Administrador de servicios de Windows.
 
 **`extension "vector" does not exist`**
-→ No está instalado pgvector. Sigue el paso 1.
+→ pgvector no esta instalado o no se ejecuto `CREATE EXTENSION vector;` en la BD tecsisai.
 
 **`ERROR: column "embedding" is of type vector(1536) but expression is of type vector(384)`**
 → No aplicaste el parche. Ejecuta `Backend/database/patch_vector_384.sql` en pgAdmin.
 
-**El chat no devuelve resultados al buscar temas**
-→ Las tesis no tienen embeddings. Registra un proyecto con PDF para que el sistema genere los vectores, o agrega texto al campo "Resumen" al registrar manualmente.
+**`Unauthorized 401` al hacer login**
+→ El usuario no existe en la BD. Ejecuta `python manage.py createsuperuser`.
 
-**`torch` falla al instalar en Windows**
-→ Instala primero la versión CPU: `pip install torch --index-url https://download.pytorch.org/whl/cpu`, luego vuelve a ejecutar `pip install -r requirements.txt`.
+**El chat no devuelve resultados**
+→ Las tesis no tienen embeddings. Registra un proyecto con PDF para que el sistema genere los vectores.
 
-**El modelo de IA tarda en cargar la primera vez**
-→ Normal. `sentence-transformers` descarga el modelo (~100 MB) la primera vez que se hace una consulta. Las siguientes veces usa el caché local.
+**`torch` falla al instalar**
+→ Instala primero la version CPU:
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+```
+
+**El modelo tarda en cargar la primera vez**
+→ Normal. `sentence-transformers` descarga el modelo (~100 MB) la primera vez. Las siguientes usan el cache local.
+En producción, ejecuta una vez `python manage.py warm_rag_model` después de instalar dependencias y configura
+`RAG_PRELOAD_EMBEDDINGS=True` en `Backend/.env` para cargarlo al iniciar Waitress.
+
+**`nmake` no se reconoce al compilar pgvector**
+→ Abrir el **"Developer Command Prompt for VS 2022"** desde el menu inicio en lugar de PowerShell normal.

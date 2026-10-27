@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { ChevronDown, Download, FileText, Filter, History, Search } from 'lucide-react'
 import { apiFetch } from '../services/api'
-import { HISTORIAL_FALLBACK } from '../data/fallbackData'
 import { simColor } from '../utils/similarity'
 import { EstadoBadge, LoadingRows, PageBreadcrumb } from '../components/common'
 
@@ -14,7 +13,7 @@ function HistorialView() {
     apiFetch('/api/historial/')
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
       .then(d => setData(d))
-      .catch(() => setData(HISTORIAL_FALLBACK))
+      .catch(() => setData([]))
       .finally(() => setLoading(false))
   }, [])
 
@@ -43,7 +42,7 @@ function HistorialView() {
     : '—'
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="academic-history flex-1 min-h-0 flex flex-col overflow-hidden">
       <PageBreadcrumb icon={History} label="Historial de Análisis" />
 
       <div className="flex-1 overflow-y-auto px-6 py-5 tecsis-scrollbar">
@@ -80,7 +79,7 @@ function HistorialView() {
             { value: avgTokens,   label: 'Promedio de tokens',  color: '#4ade80' },
           ].map(({ value, label, color }) => (
             <div key={label} className="rounded-xl px-5 py-4"
-              style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)' }}>
+              style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
               <div className="text-2xl font-bold" style={{ color }}>{value}</div>
               <div className="text-xs mt-0.5" style={{ color: 'rgba(0,0,0,0.4)' }}>{label}</div>
             </div>
@@ -96,16 +95,12 @@ function HistorialView() {
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar en el historial..."
             className="w-full text-sm pl-9 pr-4 py-2.5 rounded-xl outline-none"
-            style={{
-              background: 'rgba(0,0,0,0.05)',
-              border: '1px solid rgba(0,0,0,0.08)',
-              color: 'rgba(0,0,0,0.8)',
-            }}
+            style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', color: '#1e293b', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }} onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)' }} onBlur={e => { e.target.style.borderColor = 'rgba(0,0,0,0.08)'; e.target.style.boxShadow = '0 1px 4px rgba(0,0,0,0.02)' }}
           />
         </div>
 
         {/* Table */}
-        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.07)' }}>
+        <div className="rounded-xl overflow-hidden" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
           {/* Header */}
           <div className="grid text-[10px] font-semibold tracking-widest px-4 py-2.5"
             style={{
@@ -121,7 +116,13 @@ function HistorialView() {
             <span>ESTADO</span>
           </div>
 
-          {loading ? <LoadingRows /> : filtered.map((row, i) => (
+          {loading ? <LoadingRows /> : filtered.length === 0 ? (
+            <div className="py-12 text-center">
+              <FileText size={28} className="mx-auto mb-3" style={{ color: '#818cf8' }} />
+              <p className="text-sm font-semibold text-gray-800">No hay consultas para mostrar</p>
+              <p className="text-xs mt-1" style={{ color: 'rgba(0,0,0,0.45)' }}>Las consultas que realices aparecerán aquí.</p>
+            </div>
+          ) : filtered.map((row, i) => (
             <div key={row.id}
               className="grid px-4 py-3.5 items-center transition-colors cursor-pointer"
               style={{

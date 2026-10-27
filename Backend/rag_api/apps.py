@@ -21,9 +21,12 @@ class RagApiConfig(AppConfig):
 
         # Precarga el modelo de embeddings en un hilo aparte para que la primera
         # consulta RAG no pague el costo de carga de sentence-transformers.
-        # Solo se hace en el proceso real de `runserver`; comandos como migrate,
-        # shell o reindex_rag no deben disparar una carga paralela del modelo.
-        if 'runserver' in sys.argv and os.environ.get('RUN_MAIN'):
+        # En desarrollo espera al proceso real de runserver. En Waitress/uWSGI
+        # se puede habilitar explícitamente con RAG_PRELOAD_EMBEDDINGS=1 para
+        # evitar que el primer usuario cargue el modelo.
+        is_runserver_process = 'runserver' in sys.argv and os.environ.get('RUN_MAIN')
+        preload_requested = os.environ.get('RAG_PRELOAD_EMBEDDINGS', '').lower() in {'1', 'true', 'yes'}
+        if is_runserver_process or preload_requested:
             def _preload_embedding_model():
                 from .views import _get_model
                 _get_model()

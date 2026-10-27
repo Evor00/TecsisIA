@@ -7,7 +7,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        // Se usa IPv4 explícito porque Django local está enlazado a 127.0.0.1;
+        // "localhost" puede resolver a ::1 en Windows y devolver 502.
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },

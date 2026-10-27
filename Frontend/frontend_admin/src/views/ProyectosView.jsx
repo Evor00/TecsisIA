@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import {
   AlertCircle,
   BarChart2,
@@ -7,26 +7,26 @@ import {
   CheckCircle2,
   Clock,
   Cpu,
+  Download,
   FileCheck,
   FileText,
   FolderOpen,
   Paperclip,
   Plus,
   Search,
-  Trash2,
+  Trash2, Edit2, X,
   TrendingUp,
   Users,
   XCircle,
 } from 'lucide-react'
 import { apiFetch } from '../services/api'
-import { PROYECTOS_FALLBACK } from '../data/fallbackData'
 import { simColor } from '../utils/similarity'
 import { EstadoBadge, DistribucionBar, MetricCard, PageBreadcrumb, TechTag } from '../components/common'
 
 const METRIC_CARDS = [
   { label: 'Total Indexadas', key: 'total_tesis', icon: BookMarked, gradientFrom: 'rgba(59,130,246,0.12)',  iconBg: 'rgba(59,130,246,0.2)',  iconColor: '#60a5fa' },
   { label: 'Aprobadas',       key: 'aprobadas',   icon: FileCheck,  gradientFrom: 'rgba(16,185,129,0.12)', iconBg: 'rgba(16,185,129,0.2)', iconColor: '#34d399' },
-  { label: 'En Revisi?n',     key: 'en_revision', icon: Clock,      gradientFrom: 'rgba(245,158,11,0.12)', iconBg: 'rgba(245,158,11,0.2)', iconColor: '#fbbf24' },
+  { label: 'En Revisión',     key: 'en_revision', icon: Clock,      gradientFrom: 'rgba(245,158,11,0.12)', iconBg: 'rgba(245,158,11,0.2)', iconColor: '#fbbf24' },
 ]
 
 function Field({ label, children }) {
@@ -40,10 +40,10 @@ function Field({ label, children }) {
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="rounded-xl p-4 animate-pulse"
-          style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.08)', height: '180px' }}>
+          style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', height: '180px' }}>
           <div className="h-2 rounded-full mb-3" style={{ background: 'rgba(0,0,0,0.07)', width: '40%' }} />
           <div className="h-3 rounded-full mb-2" style={{ background: 'rgba(0,0,0,0.07)', width: '80%' }} />
           <div className="h-2 rounded-full" style={{ background: 'rgba(0,0,0,0.05)', width: '60%' }} />
@@ -63,6 +63,17 @@ function DetalleTesisModal({ proyecto: p, onClose }) {
       .then(d => d && setDetalle(d))
       .catch(() => {})
   }, [p.id])
+
+  const downloadPdf = async () => {
+    const response = await apiFetch(`/api/proyectos/${p.id}/pdf/`)
+    if (!response.ok) return
+    const url = URL.createObjectURL(await response.blob())
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${p.codigo || 'tesis'}.pdf`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   const estadoColors = {
     aprobado:          { color: '#4ade80', bg: 'rgba(34,197,94,0.12)'   },
@@ -126,6 +137,21 @@ function DetalleTesisModal({ proyecto: p, onClose }) {
             <span className="text-xs ml-auto" style={{ color: 'rgba(0,0,0,0.35)' }}>
               Registrado {p.fecha}
             </span>
+          </div>
+
+          {/* Ficha completa del proyecto */}
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              ['Código', detalle?.codigo || p.codigo || 'Sin código'],
+              ['Promoción', detalle?.promocion || p.promocion || 'No indicada'],
+              ['Grupo', detalle?.grupo || p.grupo || 'No indicado'],
+              ['Documento', detalle ? `${detalle.paginas_indexadas || 0} páginas · ${detalle.total_chunks || 0} fragmentos` : 'Cargando detalle…'],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-xl px-3 py-2.5" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)' }}>
+                <div className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'rgba(0,0,0,0.35)' }}>{label}</div>
+                <div className="text-xs mt-1 text-gray-800 break-words">{value}</div>
+              </div>
+            ))}
           </div>
 
           {/* Autores */}
@@ -210,8 +236,13 @@ function DetalleTesisModal({ proyecto: p, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end px-6 py-4 border-t flex-shrink-0"
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t flex-shrink-0"
           style={{ borderColor: 'rgba(0,0,0,0.07)' }}>
+          {detalle?.tiene_pdf && <button onClick={downloadPdf}
+            className="text-sm px-4 py-2 rounded-lg flex items-center gap-1.5"
+            style={{ background: 'rgba(99,102,241,0.12)', color: '#4f46e5' }}>
+            <Download size={14} /> Descargar PDF
+          </button>}
           <button onClick={onClose}
             className="text-sm px-5 py-2 rounded-lg"
             style={{ background: 'rgba(0,0,0,0.07)', color: 'rgba(0,0,0,0.6)' }}
@@ -239,12 +270,144 @@ const ESTADO_OPTS = [
   { value: 'Rechazada',   label: 'Rechazada',   color: '#f87171', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.35)'  },
 ]
 
+
+function EditarProyectoModal({ proyecto, onClose, onUpdated }) {
+  const [form, setForm]           = useState({ 
+    titulo: proyecto.titulo || '', 
+    autor: proyecto.autores || proyecto.autor || '', 
+    grupo: proyecto.grupo || '', 
+    promocion: proyecto.promocion || 'C24', 
+    tecnologias: proyecto.tecnologias || [], 
+    resumen: proyecto.resumen || '', 
+    estado: proyecto.estado || 'en-revision', 
+    codigo: proyecto.codigo || '', 
+    score: proyecto.score || '',
+    activo: proyecto.activo !== false
+  })
+  const [techInput, setTechInput] = useState('')
+  const [saving, setSaving]       = useState(false)
+  const [error, setError]         = useState(null)
+
+  const addTech = (name) => {
+    const t = (name || techInput).trim()
+    if (t && !form.tecnologias.includes(t))
+      setForm(f => ({ ...f, tecnologias: [...f.tecnologias, t] }))
+    setTechInput('')
+  }
+  const removeTech = (t) => setForm(f => ({ ...f, tecnologias: f.tecnologias.filter(x => x !== t) }))
+
+  const handleUpdate = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await apiFetch(`/api/proyectos/${proyecto.id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify(form)
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al actualizar')
+      onUpdated({ ...proyecto, ...form })
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 className="font-semibold text-slate-800">Editar Proyecto</h3>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-50 rounded-lg"><X size={18} /></button>
+        </div>
+
+        <div className="p-6 overflow-y-auto space-y-5">
+          {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
+
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Ttulo del Proyecto</label>
+            <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.titulo} onChange={e => setForm({...form, titulo: e.target.value})} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Autor(es)</label>
+              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.autor} onChange={e => setForm({...form, autor: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Grupo / Seccin</label>
+              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.grupo} onChange={e => setForm({...form, grupo: e.target.value})} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Cdigo (Opcional)</label>
+              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.codigo} onChange={e => setForm({...form, codigo: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Promocin</label>
+              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.promocion} onChange={e => setForm({...form, promocion: e.target.value})} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Estado</label>
+              <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.estado} onChange={e => setForm({...form, estado: e.target.value})}>
+                <option value="en-revision">En Revisión</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="observado">Observado</option>
+                <option value="rechazado">Rechazado</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Calificacin / Score (Opcional)</label>
+              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.score} onChange={e => setForm({...form, score: e.target.value})} />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Tecnologas</label>
+            <div className="flex gap-2 mb-2">
+              <input className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Ej. React, Python..." value={techInput} onChange={e=>setTechInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addTech()} />
+              <button onClick={()=>addTech()} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Agregar</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {form.tecnologias.map(t => (
+                <span key={t} className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-md text-xs font-medium flex items-center gap-1">
+                  {t} <button onClick={()=>removeTech(t)} className="text-indigo-400 hover:text-indigo-700"><X size={12}/></button>
+                </span>
+              ))}
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Resumen (Actualiza el 1er chunk)</label>
+            <textarea className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm min-h-[100px]" value={form.resumen} onChange={e => setForm({...form, resumen: e.target.value})} />
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg">Cancelar</button>
+          <button onClick={handleUpdate} disabled={saving || !form.titulo || !form.autor} className="px-6 py-2 bg-[#4f46e5] hover:bg-[#4338ca] text-white text-sm font-medium rounded-lg disabled:opacity-50">
+            {saving ? 'Guardando...' : 'Guardar Cambios'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function RegistrarProyectoModal({ onClose, onCreated }) {
   const [form, setForm]           = useState({ titulo: '', autor: '', grupo: '', promocion: 'C24', tecnologias: [], resumen: '', estado: 'En Revisión', codigo: '', score: '' })
   const [techInput, setTechInput] = useState('')
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState(null)
   const [pdfFile, setPdfFile]     = useState(null)
+  const [pdfPreview, setPdfPreview] = useState(null)
   const [xmlOk, setXmlOk]         = useState(null)   // nombre del XML importado
   const [savingStep, setSavingStep] = useState('')    // texto de progreso
   const xmlRef = useRef(null)
@@ -327,7 +490,7 @@ function RegistrarProyectoModal({ onClose, onCreated }) {
   }
 
   // ── PDF attach ───────────────────────────────────────────────────────────────
-  const handlePDF = (e) => {
+  const handlePDF = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
@@ -336,7 +499,34 @@ function RegistrarProyectoModal({ onClose, onCreated }) {
       return
     }
     setPdfFile(file)
+    setPdfPreview(null)
     setError(null)
+    setSaving(true)
+    setSavingStep('Leyendo datos del PDF…')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const token = localStorage.getItem('tecsis_token')
+      const res = await fetch('/api/rag/preview/', {
+        method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'No se pudo leer el PDF.')
+      const m = data.metadata
+      setForm(f => ({
+        ...f,
+        titulo: m.titulo || f.titulo, autor: m.autor || f.autor, grupo: m.grupo || f.grupo,
+        promocion: m.promocion || f.promocion, estado: m.estado || f.estado, codigo: m.codigo || f.codigo,
+        score: m.score || f.score, tecnologias: m.tecnologias?.length ? m.tecnologias : f.tecnologias,
+        resumen: m.resumen || f.resumen,
+      }))
+      setPdfPreview({ pages: data.pages, metadata: m })
+    } catch (err) {
+      setError(err.message || 'No se pudieron extraer los datos del PDF.')
+    } finally {
+      setSaving(false)
+      setSavingStep('')
+    }
   }
 
   // ── Submit ───────────────────────────────────────────────────────────────────
@@ -460,9 +650,9 @@ function RegistrarProyectoModal({ onClose, onCreated }) {
               <div className="flex items-center justify-between text-[11px]">
                 <span style={{ color: '#4ade80' }}>
                   <CheckCircle2 size={12} className="inline mr-1" />
-                  PDF adjunto — se indexará al guardar (embeddings + pgvector)
+                  PDF leído — {pdfPreview ? `${pdfPreview.pages} páginas y campos autocompletados` : 'se indexará al guardar'}
                 </span>
-                <button onClick={() => setPdfFile(null)} style={{ color: 'rgba(0,0,0,0.3)', fontSize: '13px' }}>×</button>
+                <button onClick={() => { setPdfFile(null); setPdfPreview(null) }} style={{ color: 'rgba(0,0,0,0.3)', fontSize: '13px' }}>×</button>
               </div>
             )}
           </div>
@@ -635,6 +825,7 @@ function ProyectosView({ metrics }) {
   const [search, setSearch]       = useState('')
   const [filtro, setFiltro]       = useState('todos')
   const [showModal, setShowModal]       = useState(false)
+  const [editingProyecto, setEditingProyecto] = useState(null)
   const [detalle, setDetalle]           = useState(null)
   const [toast, setToast]               = useState(null)
 
@@ -674,8 +865,9 @@ function ProyectosView({ metrics }) {
         setConteos(d.conteos ?? { todos: 0, aprobado: 0, 'en-revision': 0, observado: 0, rechazado: 0 })
       })
       .catch(() => {
-        setProyectos(PROYECTOS_FALLBACK)
-        setConteos({ todos: 6, aprobado: 2, 'en-revision': 2, observado: 1, rechazado: 1 })
+        setProyectos([])
+        setConteos({ todos: 0, aprobado: 0, 'en-revision': 0, observado: 0, rechazado: 0 })
+        showToast('No se pudieron cargar los proyectos. Revisa la conexión con el servidor.')
       })
       .finally(() => setLoading(false))
   }
@@ -705,7 +897,7 @@ function ProyectosView({ metrics }) {
 
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="academic-projects flex-1 min-h-0 flex flex-col overflow-hidden">
       <PageBreadcrumb icon={FolderOpen} label="Proyectos C24" />
 
       <div className="flex-1 overflow-y-auto px-6 py-5 tecsis-scrollbar">
@@ -722,7 +914,7 @@ function ProyectosView({ metrics }) {
               En línea
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-4 mb-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-1">
             {METRIC_CARDS.map(({ key: k, ...rest }) => <MetricCard key={k} {...rest} value={metrics?.[k]} />)}
           </div>
           <DistribucionBar metrics={metrics} />
@@ -752,13 +944,13 @@ function ProyectosView({ metrics }) {
               onClick={() => setFiltro(tab.id)}
               className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors font-medium"
               style={{
-                background: filtro === tab.id ? 'rgba(0,0,0,0.08)' : 'transparent',
-                color: filtro === tab.id ? '#111827' : 'rgba(0,0,0,0.4)',
-                border: filtro === tab.id ? '1px solid rgba(0,0,0,0.15)' : '1px solid transparent',
+                background: filtro === tab.id ? '#ffffff' : 'transparent', boxShadow: filtro === tab.id ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
+                color: filtro === tab.id ? '#4f46e5' : 'rgba(0,0,0,0.5)',
+                border: filtro === tab.id ? '1px solid rgba(99,102,241,0.2)' : '1px solid transparent',
               }}>
               {tab.label}
               <span className="text-[10px] px-1.5 py-0.5 rounded-md"
-                style={{ background: filtro === tab.id ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.07)' }}>
+                style={{ background: filtro === tab.id ? 'rgba(99,102,241,0.1)' : 'rgba(0,0,0,0.05)' }}>
                 {conteos[tab.id] ?? 0}
               </span>
             </button>
@@ -772,23 +964,30 @@ function ProyectosView({ metrics }) {
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por título, grupo o tecnología..."
             className="w-full text-sm pl-9 pr-4 py-2.5 rounded-xl outline-none"
-            style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', color: 'rgba(0,0,0,0.8)' }} />
+            style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', color: '#1e293b', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }} onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)' }} onBlur={e => { e.target.style.borderColor = 'rgba(0,0,0,0.08)'; e.target.style.boxShadow = '0 1px 4px rgba(0,0,0,0.02)' }} />
         </div>
 
         {/* Grid */}
         {loading ? <GridSkeleton /> : (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filtered.length === 0 && (
+              <div className="col-span-full rounded-xl border border-dashed py-12 px-6 text-center" style={{ borderColor: 'rgba(99,102,241,0.28)', background: 'rgba(99,102,241,0.03)' }}>
+                <FileText size={28} className="mx-auto mb-3" style={{ color: '#818cf8' }} />
+                <p className="text-sm font-semibold text-gray-800">No se encontraron proyectos</p>
+                <p className="text-xs mt-1" style={{ color: 'rgba(0,0,0,0.45)' }}>Prueba con otra búsqueda o registra un proyecto nuevo.</p>
+              </div>
+            )}
             {filtered.map(p => (
               <div key={p.codigo}
                 className="rounded-xl p-4 flex flex-col gap-3 cursor-pointer transition-all"
                 style={{
-                  background:  p.activo ? 'rgba(0,0,0,0.04)' : 'rgba(0,0,0,0.02)',
+                  background: p.activo ? '#ffffff' : 'rgba(255,255,255,0.6)',
                   border:      `1px solid ${p.activo ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.05)'}`,
                   opacity:     p.activo ? 1 : 0.55,
                 }}
                 onClick={() => setDetalle(p)}
-                onMouseEnter={e => { if (p.activo) { e.currentTarget.style.background = 'rgba(0,0,0,0.07)'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.13)' } }}
-                onMouseLeave={e => { e.currentTarget.style.background = p.activo ? 'rgba(0,0,0,0.04)' : 'rgba(0,0,0,0.02)'; e.currentTarget.style.borderColor = p.activo ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.05)' }}>
+                onMouseEnter={e => { if (p.activo) { e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.3)' } }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = p.activo ? '0 2px 10px rgba(0,0,0,0.04)' : 'none'; e.currentTarget.style.borderColor = p.activo ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.04)' }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-md"
@@ -807,8 +1006,15 @@ function ProyectosView({ metrics }) {
                         style={{ left: p.activo ? '17px' : '2px', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
                     </button>
                     {/* Eliminar */}
-                    <button
-                      onClick={e => handleEliminar(p, e)}
+                    
+                    <button 
+                      onClick={e => { e.stopPropagation(); setEditingProyecto(p); }}
+                      title="Editar proyecto"
+                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                    >
+                      <Edit2 size={15} />
+                    </button>
+                    <button onClick={e => handleEliminar(p, e)}
                       title="Eliminar proyecto"
                       className="flex items-center justify-center w-5 h-5 rounded transition-all"
                       style={{ color: 'rgba(0,0,0,0.2)' }}
@@ -845,7 +1051,21 @@ function ProyectosView({ metrics }) {
         )}
       </div>
 
+      
+      {editingProyecto && (
+        <EditarProyectoModal 
+          proyecto={editingProyecto} 
+          onClose={() => setEditingProyecto(null)} 
+          onUpdated={(updated) => {
+            setProyectos(prev => prev.map(p => p.id === updated.id ? updated : p))
+            setEditingProyecto(null)
+            showToast(`✅ Proyecto "${updated.titulo}" actualizado`)
+          }} 
+        />
+      )}
+
       {showModal && (
+
         <RegistrarProyectoModal
           onClose={() => setShowModal(false)}
           onCreated={(nuevo) => {

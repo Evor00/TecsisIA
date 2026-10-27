@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tesis>
+  <titulo>Chatbot de Atención al Cliente con NLP usando BERT y React</titulo>
+  <autores>
+    <autor>D. Cueva</autor>
+    <autor>B. Arce</autor>
+    <autor>S. Puma</autor>
+  </autores>
+  <grupo>Grupo Gamma</grupo>
+  <promocion>C24</promocion>
+  <codigo>C24-103</codigo>
+  <estado>Aprobada</estado>
+  <score>88/100</score>
+  <tecnologias>
+    <tecnologia>React</tecnologia>
+    <tecnologia>FastAPI</tecnologia>
+    <tecnologia>Hugging Face</tecnologia>
+    <tecnologia>BERT</tecnologia>
+    <tecnologia>Redis</tecnologia>
+  </tecnologias>
+  <resumen>
+    Sistema de chatbot inteligente para servicio al cliente que utiliza el modelo BERT fine-tuneado para comprensión de intención en español. El sistema clasifica consultas en 25 categorías y genera respuestas usando una base de conocimiento vectorial. Gestión de sesiones con Redis y panel de monitoreo en tiempo real.
+  </resumen>
+  <secciones>
+  <seccion titulo="Introducción">
+      Las empresas de retail peruano reciben un promedio de 1,500 consultas diarias que requieren respuesta inmediata. La atención manual genera altos costos operativos y tiempos de espera que afectan la satisfacción del cliente. Este proyecto implementa un chatbot basado en procesamiento de lenguaje natural capaz de resolver el 70% de las consultas sin intervención humana.
+    </seccion>
+  <seccion titulo="Marco Teórico">
+      BERT (Bidirectional Encoder Representations from Transformers) es un modelo de lenguaje preentrenado que captura el contexto bidireccional de las palabras. El fine-tuning permite adaptar BERT a dominios específicos con datasets reducidos. Los vectores de embeddings permiten búsqueda semántica en bases de conocimiento. Redis gestiona el estado de conversaciones con latencia de microsegundos.
+    </seccion>
+  <seccion titulo="Metodología">
+      Se recopiló un dataset de 8,000 interacciones reales de un centro de atención al cliente. BERT-base-multilingual fue fine-tuneado para clasificación de intención en 25 categorías. La base de conocimiento se indexó con FAISS para búsqueda de similitud semántica. El frontend en React implementa un widget embebible con historial de conversación y transferencia a agente humano.
+    </seccion>
+  <seccion titulo="Resultados">
+      El chatbot resolvió el 73% de las consultas sin escalar a un agente humano. La precisión de clasificación de intención alcanzó el 91.4%. El tiempo promedio de respuesta fue de 0.8 segundos. La satisfacción del cliente (CSAT) mejoró de 3.2 a 4.1 sobre 5.
+    </seccion>
+  <seccion titulo="Conclusiones">
+      El chatbot NLP demostró ser una solución efectiva y escalable para atención al cliente. El uso de BERT en español superó significativamente enfoques basados en reglas. Se recomienda incorporar análisis de sentimiento para detectar clientes frustrados y priorizar la escalación a agentes humanos.
+    </seccion>
+  </secciones>
+</tesis>
