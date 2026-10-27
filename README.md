@@ -33,23 +33,11 @@ Plataforma web de gestión documental y búsqueda semántica de tesis para la ca
 
 ---
 
-## Instalación rapida (scripts automatizados)
+## Instalación rápida
 
-El proyecto incluye cuatro scripts `.bat` para preparar y verificar el entorno:
-
-| Script | Descripcion |
-|---|---|
-| `db_setup.bat` | Crea o valida la BD y aplica solo los parches que faltan |
-| `setup.bat` | Crea el venv e instala dependencias Python y Node desde sus lockfiles |
-| `verify.bat` | Ejecuta checks Django, pruebas, lint y build del frontend |
-| `start.bat` | Levanta el backend (Django :8000) y frontend (Vite :5173) en paralelo |
-
-### Orden de ejecucion:
-1. Instalar PostgreSQL + pgvector (ver seccion 1 abajo)
-2. Ejecutar `db_setup.bat` como administrador
-3. Ejecutar `setup.bat`
-4. Ejecutar `verify.bat`
-5. Ejecutar `start.bat`
+Instala las dependencias del backend desde `Backend/requirements.txt` y las del
+frontend con `npm install` dentro de `Frontend/frontend_admin`. Luego inicia
+Django en el puerto 8000 y Vite en el puerto 5173.
 
 ---
 
@@ -84,10 +72,7 @@ SELECT * FROM pg_available_extensions WHERE name = 'vector';
 
 ## 2. Configurar la base de datos
 
-### Opcion A — Script automatico (recomendado)
-Ejecutar `db_setup.bat` como administrador desde la raiz del proyecto.
-
-### Opcion B — Manual en pgAdmin
+### Configuración manual en pgAdmin
 
 **2.1 Crear la base de datos:**
 ```sql
@@ -217,9 +202,6 @@ Con ambos servidores corriendo, abrir `http://localhost:5173`:
 
 ```
 TecsisAi-2/
-├── setup.bat                    ← Configura venv + dependencias + migraciones
-├── start.bat                    ← Levanta backend y frontend en paralelo
-├── db_setup.bat                 ← Crea BD y aplica schema + parches SQL
 ├── Backend/
 │   ├── .env                     ← Variables de entorno (OpenWebUI URL/token)
 │   ├── manage.py
