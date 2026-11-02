@@ -543,7 +543,9 @@ function DashboardChatView({ conversacionId, onConversation }) {
                       borderRadius: msg.role === 'user' ? '24px 24px 4px 24px' : '0',
                       whiteSpace: 'pre-wrap',
                     }}>
-                    {msg.content}
+                    {msg.role === 'assistant'
+                      ? <RichMarkdown content={msg.content} onCitation={setSelectedCitation} />
+                      : msg.content}
                     {/* Cursor parpadeante mientras hace stream */}
                     {msg.streaming && (
                       <span className="inline-block w-0.5 h-4 ml-0.5 align-middle rounded-sm animate-pulse"

@@ -40,6 +40,43 @@ def is_configured() -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Descubrimiento de modelos — Open WebUI de Comunidad Innovadores
+# ---------------------------------------------------------------------------
+
+def get_available_models(timeout: float = 5.0) -> list[dict]:
+    """Obtiene los modelos disponibles de Open WebUI sin exponer el token.
+
+    La instancia de Comunidad Innovadores documenta ``/api/v1/models``. Algunas
+    versiones anteriores de Open WebUI responden en ``/api/models``; se prueban
+    ambas rutas para mantener compatibilidad al cambiar la versión del servidor.
+    """
+    if not settings.OPENWEBUI_TOKEN:
+        return []
+
+    headers = {'Authorization': f'Bearer {settings.OPENWEBUI_TOKEN}'}
+    for endpoint in ('/api/v1/models', '/api/models'):
+        try:
+            response = httpx.get(
+                f'{settings.OPENWEBUI_URL}{endpoint}',
+                headers=headers,
+                timeout=httpx.Timeout(timeout, connect=min(timeout, 3.0)),
+            )
+            if response.status_code != 200:
+                continue
+            raw_models = response.json().get('data', [])
+            if not isinstance(raw_models, list):
+                continue
+            return [
+                {'id': model.get('id', ''), 'name': model.get('name', model.get('id', ''))}
+                for model in raw_models
+                if isinstance(model, dict) and model.get('id')
+            ]
+        except (httpx.RequestError, ValueError, TypeError):
+            continue
+    return []
+
+
+# ---------------------------------------------------------------------------
 # Modo demo — respuesta estructurada sin LLM
 # ---------------------------------------------------------------------------
 

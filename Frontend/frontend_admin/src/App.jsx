@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useState } from 'react'
-import { Bot, FolderOpen, History, LogOut, MessageSquare, Plus, Settings, Trash2, GitCompare, LayoutDashboard, Search, Moon, Sun, Bell } from 'lucide-react'
+import { Bot, FolderOpen, History, LogOut, MessageSquare, Plus, Settings, Trash2, GitCompare, LayoutDashboard, Search, Bell } from 'lucide-react'
 import { Component } from 'react'
 
 import { apiFetch } from './services/api'
@@ -60,7 +60,7 @@ export default function App() {
   const [metrics, setMetrics]   = useState(null)
   const [perfil, setPerfil]     = useState(null)
   const [activeNav, setActiveNav] = useState('dashboard')
-  const [theme, setTheme] = useState('dark')
+  const [theme, setTheme] = useState(() => localStorage.getItem('tecsis_theme') || 'dark')
 
   const [conversaciones, setConversaciones] = useState([])
   const [activeConv, setActiveConv]         = useState(null)   // id | null (chat nuevo)
@@ -273,7 +273,6 @@ export default function App() {
           </label>
           <div className="flex items-center gap-3 ml-auto">
             <span className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: theme === 'dark' ? 'rgba(6,182,212,.12)' : '#ecfdf5', color: theme === 'dark' ? '#67e8f9' : '#059669' }}><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{metrics?.total_tesis ?? 20} tesis</span>
-            <button onClick={toggleTheme} aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} className="p-2 rounded-xl transition-colors" style={{ color: theme === 'dark' ? '#67e8f9' : '#4f46e5', background: theme === 'dark' ? 'rgba(8,145,178,.15)' : '#eef2ff' }}>{theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}</button>
             <button className="hidden sm:flex p-2 rounded-xl" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}><Bell size={16} /></button>
           </div>
         </header>
@@ -284,7 +283,7 @@ export default function App() {
           {activeNav === 'historial' && <HistorialView />}
           {activeNav === 'proyectos' && <ProyectosView metrics={metrics} />}
           {activeNav === 'comparador' && <ComparadorView />}
-          {activeNav === 'perfil'    && <PerfilView />}
+          {activeNav === 'perfil'    && <PerfilView theme={theme} onToggleTheme={toggleTheme} />}
         </ViewErrorBoundary>
         </div>
       </main>

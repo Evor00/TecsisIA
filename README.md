@@ -149,10 +149,25 @@ POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 ```
 
+### 3.4 Conectar con La BestIA de Comunidad Innovadores
+
+Con el equipo conectado a la red **Comunidad Innovadores**, genera una clave API
+personal en Open WebUI y agrégala únicamente a `Backend/.env`:
+
+```dotenv
+OPENWEBUI_URL=http://192.168.17.11:3000
+OPENWEBUI_TOKEN=TU_CLAVE_API_PERSONAL
+OPENWEBUI_MODEL=google/gemma-4-26B-A4B-it
+```
+
+El panel detecta los modelos disponibles desde `/api/v1/models` y mantiene
+compatibilidad con instalaciones que usan `/api/models`. Si la IP no responde,
+el sistema continúa en modo RAG local de respaldo.
+
 > No subas `Backend/.env` ni claves de OpenWebUI/Gemini al repositorio. El archivo
 > `.env.example` solo contiene marcadores de ejemplo.
 
-### 3.4 Aplicar migraciones y levantar servidor
+### 3.5 Aplicar migraciones y levantar servidor
 
 ```bash
 python manage.py migrate

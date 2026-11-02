@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tesis>
+  <titulo>Plataforma IoT para Monitoreo Inteligente de Energía Solar</titulo>
+  <autores>
+    <autor>Lucía Fernández</autor>
+    <autor>Diego Ramos</autor>
+  </autores>
+  <grupo>Grupo Innovación</grupo>
+  <promocion>C24</promocion>
+  <codigo>C24-301</codigo>
+  <estado>Aprobada</estado>
+  <score>92/100</score>
+  <tecnologias>
+    <tecnologia>React</tecnologia>
+    <tecnologia>FastAPI</tecnologia>
+    <tecnologia>MQTT</tecnologia>
+    <tecnologia>InfluxDB</tecnologia>
+    <tecnologia>Docker</tecnologia>
+  </tecnologias>
+  <resumen>Esta tesis presenta una plataforma IoT para supervisar paneles solares en tiempo real. Los sensores registran voltaje, corriente, irradiancia y temperatura; los datos se envían mediante MQTT y se visualizan en un panel web. El sistema genera alertas tempranas ante pérdidas de rendimiento y facilita el mantenimiento preventivo.</resumen>
+  <secciones>
+    <seccion titulo="Introducción">Los sistemas fotovoltaicos requieren observación continua para identificar fallas, suciedad y condiciones ambientales que reducen su eficiencia. El proyecto propone una solución de bajo costo que centraliza indicadores operativos y permite consultar el historial desde un navegador.</seccion>
+    <seccion titulo="Metodología">Se desarrolló un prototipo con nodos de medición, un servicio FastAPI y una base de datos de series temporales. El tablero React muestra tendencias diarias y compara la energía producida con una línea base calculada para cada panel.</seccion>
+    <seccion titulo="Resultados">Durante cuatro semanas de prueba, la plataforma registró más de 18 mil lecturas y detectó tres eventos de caída de producción. Las alertas permitieron reducir el tiempo de diagnóstico de horas a pocos minutos.</seccion>
+    <seccion titulo="Conclusiones">La arquitectura propuesta integra adquisición, almacenamiento y visualización de datos de forma escalable. Se recomienda añadir modelos de predicción de generación energética como trabajo futuro.</seccion>
+  </secciones>
+</tesis>

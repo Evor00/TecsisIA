@@ -181,6 +181,141 @@ textarea::placeholder {
   background: #091525 !important;
 }
 
+/* Diálogos de Proyectos: no dependen de las utilidades de Tailwind ni de los
+   estilos inline de cada formulario. Así el mismo CRUD conserva contraste
+   correcto en ambos temas. */
+.academic-modal__surface {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, .12);
+  color: #17233c;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .24);
+}
+
+.academic-modal__header,
+.academic-modal__footer {
+  border-color: #e8ecf3;
+}
+
+.academic-modal__footer {
+  background: #f8fafc;
+}
+
+.academic-form-field > label {
+  color: #64748b;
+}
+
+.academic-input {
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.academic-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .14);
+}
+
+.academic-input::placeholder {
+  color: #94a3b8;
+}
+
+.academic-secondary-button {
+  background: #eef2f7;
+  color: #334155;
+  transition: background .15s ease, color .15s ease;
+}
+
+.academic-secondary-button:hover {
+  background: #e2e8f0;
+}
+
+.academic-modal__close {
+  color: #64748b;
+}
+
+.academic-modal__close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.theme-dark .academic-modal__surface {
+  background: #0d1d31 !important;
+  border-color: rgba(56, 189, 248, .24) !important;
+  color: #e5eefc;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, .48);
+}
+
+.theme-dark .academic-modal__header,
+.theme-dark .academic-modal__footer {
+  border-color: rgba(56, 189, 248, .17) !important;
+}
+
+.theme-dark .academic-modal__footer {
+  background: #0b192b !important;
+}
+
+.theme-dark .academic-modal h2,
+.theme-dark .academic-modal h3,
+.theme-dark .academic-modal .text-gray-900,
+.theme-dark .academic-modal .text-slate-800 {
+  color: #e5eefc !important;
+}
+
+.theme-dark .academic-modal .academic-form-field > label,
+.theme-dark .academic-modal .text-slate-500,
+.theme-dark .academic-modal [style*="color: rgba(0, 0, 0, 0.35)"],
+.theme-dark .academic-modal [style*="color: rgba(0, 0, 0, 0.4)"] {
+  color: #a9bbd3 !important;
+}
+
+.theme-dark .academic-modal .academic-input,
+.theme-dark .academic-modal input:not([type="file"]),
+.theme-dark .academic-modal textarea,
+.theme-dark .academic-modal select {
+  background: #10243c !important;
+  color: #e5eefc !important;
+  border-color: rgba(125, 211, 252, .48) !important;
+  color-scheme: dark;
+}
+
+.theme-dark .academic-modal .academic-input:focus,
+.theme-dark .academic-modal input:not([type="file"]):focus,
+.theme-dark .academic-modal textarea:focus,
+.theme-dark .academic-modal select:focus {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, .16) !important;
+}
+
+.theme-dark .academic-modal input::placeholder,
+.theme-dark .academic-modal textarea::placeholder {
+  color: #7f97b7 !important;
+}
+
+.theme-dark .academic-modal .academic-secondary-button {
+  background: #17314f !important;
+  color: #dbeafe !important;
+}
+
+.theme-dark .academic-modal .academic-secondary-button:hover,
+.theme-dark .academic-modal__close:hover {
+  background: #1d4166 !important;
+  color: #ffffff !important;
+}
+
+.theme-dark .academic-modal__close {
+  color: #a9bbd3;
+}
+
+.theme-dark .academic-modal [style*="background: rgba(0, 0, 0, 0.03)"],
+.theme-dark .academic-modal [style*="background: rgba(0, 0, 0, 0.04)"],
+.theme-dark .academic-modal [style*="background: rgba(0, 0, 0, 0.06)"],
+.theme-dark .academic-modal [style*="background: rgba(0, 0, 0, 0.07)"],
+.theme-dark .academic-modal [style*="background: rgba(0, 0, 0, 0.08)"] {
+  background: #132a45 !important;
+}
+
 /* El espacio de la bienvenida se reduce en laptops bajas: las cuatro acciones
    quedan sobre el compositor, sin tener que hacer scroll solo para verlas. */
 @media (max-height: 820px) {

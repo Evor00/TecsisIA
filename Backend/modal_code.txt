@@ -1,0 +1,102 @@
+function RegistrarProyectoModal({ onClose, onCreated }) {
+  const [form, setForm]           = useState({ titulo: '', autor: '', grupo: '', promocion: 'C24', tecnologias: [], resumen: '', estado: 'En Revisión', codigo: '', score: '' })
+  const [techInput, setTechInput] = useState('')
+  const [saving, setSaving]       = useState(false)
+  const [error, setError]         = useState(null)
+  const [pdfFile, setPdfFile]     = useState(null)
+  const [xmlOk, setXmlOk]         = useState(null)   // nombre del XML importado
+  const [savingStep, setSavingStep] = useState('')    // texto de progreso
+  const xmlRef = useRef(null)
+  const pdfRef = useRef(null)
+
+  const addTech = (name) => {
+    const t = (name || techInput).trim()
+    if (t && !form.tecnologias.includes(t))
+      setForm(f => ({ ...f, tecnologias: [...f.tecnologias, t] }))
+    setTechInput('')
+  }
+  const removeTech = (t) => setForm(f => ({ ...f, tecnologias: f.tecnologias.filter(x => x !== t) }))
+
+  // ── XML import (server-side: crea tesis + indexa chunks) ───────────────────
+  const handleXML = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+
+    // Modo rápido: autocompletar el formulario (fallback si el servidor falla)
+    const autofill = () => {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        try {
+          const doc   = new DOMParser().parseFromString(ev.target.result, 'text/xml')
+          const get   = (tag) => doc.querySelector(tag)?.textContent?.trim() || ''
+          const autores_el = doc.querySelector('autores')
+          const autor = autores_el
+            ? [...autores_el.querySelectorAll('autor')].map(a => a.textContent.trim()).join(' · ')
+            : get('autor')
+          const techs = [...doc.querySelectorAll('tecnologia')].map(n => n.textContent.trim()).filter(Boolean)
+          setForm(f => ({
+            ...f,
+            titulo:      get('titulo')    || f.titulo,
+            autor:       autor            || f.autor,
+            grupo:       get('grupo')     || f.grupo,
+            promocion:   get('promocion') || f.promocion,
+            estado:      get('estado')    || f.estado,
+            codigo:      get('codigo')    || f.codigo,
+            score:       get('score')     || f.score,
+            tecnologias: techs.length ? techs : f.tecnologias,
+            resumen:     get('resumen')   || f.resumen,
+          }))
+          setXmlOk(file.name + ' (campos autocompletados — revisa y guarda)')
+          setError(null)
+        } catch {
+          setError('El archivo XML no tiene el formato esperado.')
+        }
+      }
+      reader.readAsText(file, 'UTF-8')
+    }
+
+    // Modo completo: subir al servidor → crea tesis + indexa secciones
+    setSaving(true)
+    setSavingStep('Subiendo XML e indexando contenido…')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const token = localStorage.getItem('tecsis_token')
+      const res = await fetch('/api/xml/upload/', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        // Servidor rechazó — usar autofill como fallback
+        setSaving(false); setSavingStep('')
+        autofill()
+        return
+      }
+      // Éxito: cerrar modal y añadir a la lista
+      onCreated(data)
+      onClose()
+    } catch {
+      // Sin conexión — usar autofill como fallback
+      setSaving(false); setSavingStep('')
+      autofill()
+    }
+  }
+
+  // ── PDF attach ───────────────────────────────────────────────────────────────
+  const handlePDF = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setError('Solo se aceptan archivos PDF.')
+      return
+    }
+    setPdfFile(file)
+    setError(null)
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────────
+  const handl

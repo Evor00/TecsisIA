@@ -1,0 +1,116 @@
+===== SLIDE 1 =====\nS i s t e m a  d e  g e s t i ó n  c e n t r a l i z a d a  d e  t e s i s  y  p r e - t e s i s  c o n  I A  l o c a l
+J a m i r  A l e x a n d e r  V e n t u r o  P é r e z  ·  E n r i q u e  V a l o i s  O p o r t o  R o j a s
+D i s e ñ o  y  D e s a r r o l l o  d e  S o f t w a r e  ·  E M P R E S A ·  T E C S U P
+2 0 2 6 - 1
+TecSis-IA\n===== SLIDE 2 =====\nPrincipales problemas identificados: falta de centralización de
+documentos, seguimiento manual propenso a errores, repositorios
+pasivos sin capacidad de consulta inteligente, y dificultad para
+encontrar antecedentes relevantes de proyectos anteriores.
+Gestión actual: El Departamento de Tecnología Digital administra
+aproximadamente 50 pre-tesis y 20 tesis para el periodo 2026-1,
+sin un sistema centralizado que permita un seguimiento eficiente
+y ordenado.
+Problemática y Contexto\n===== SLIDE 3 =====\nObjetivos
+Objetiv o: Desarrollar un sistema centralizado
+para or ganizar, consultar y dar seguimiento a
+tesis y pre-tesis mediante IA local.
+Usuarios directos: Docentes, asesores y
+encar gados del Departamento de T ecnología
+Digital.
+Beneficiarios indirectos: Estudiantes de
+TE CSUP.\n===== SLIDE 4 =====\nObjetivos
+O b j e t i v o s  e s p e c i f i c o s :
+I m p l e m e n t a r  u n  m ó d u l o  d e  r e g i s t r o  d e  d o c u m e n t o s  q u e  p e r m i t a  c a r g a r ,
+p r o c e s a r  y  a l m a c e n a r  d e  m a n e r a  o r g a n i z a d a  l a s  i n v e s t i g a c i o n e s
+a c a d é m i c a s  e n  u n a  b a s e  d e  d a t o s  l o c a l  y  s e g u r a .  
+D e s a r r o l l a r  u n  p a n e l  d e  a d m i n i s t r a c i ó n  q u e  o t o r g u e  a  l o s  e n c a r g a d o s  y
+d o c e n t e s  e l  c o n t r o l  p a r a  g e s t i o n a r  y  s u p e r v i s a r  
+I n c o r p o r a r  u n  m ó d u l o  d e  h i s t o r i a l  y  s e g u i m i e n t o  q u e  r e g i s t r e  l a s
+c o n s u l t a s  r e a l i z a d a s ,  l o s  r e s u l t a d o s  o b t e n i d o s  y  l o s  i n d i c a d o r e s
+a s o c i a d o s  a  l a  r e v i s i ó n  d e  d o c u m e n t o s  a c a d é m i c o s .  
+D e s p l e g a r  y  v a l i d a r  l a  s o l u c i ó n  t e c n o l ó g i c a  e n  l a  i n f r a e s t r u c t u r a  d e l
+i n s t i t u t o ,  a s e g u r a n d o  s u  c o r r e c t o  f u n c i o n a m i e n t o  y  u s a b i l i d a d  p o r  p a r t e
+d e  l o s  d o c e n t e s  y  p e r s o n a l  a d m i n i s t r a t i v o .  \n===== SLIDE 5 =====\nRequerimientos Funcionales
+Autenticación de usuarios
+con credenciales
+institucionales. Control de
+acceso por roles: docente,
+asesor y encargado. Sesiones
+seguras con validación de
+permisos para proteger la
+información académica del
+sistema.
+Registro centralizado de
+proyectos de tesis y pre-tesis
+del Departamento de
+Tecnología Digital. Gestión
+de tesis por periodo, con
+datos de autores, asesores,
+estados y categorías.
+Carga y almacenamiento de
+documentos en formato
+XML y PDF. Procesamiento
+automático del contenido
+para indexación semántica
+mediante RAG, permitiendo
+consultas inteligentes sobre
+el contenido de cada
+documento.
+I N I C I O  D E  S E S I Ó N
+S E G U R O
+R E G I S T R O  D E  T E S I S  Y
+P R E - T E S I S
+C A R G A  D E  X M L  Y  P D F\n===== SLIDE 6 =====\nRequerimientos Funcionales
+Control del ciclo de vida
+documental con estados:
+Aprobado, En Revisión,
+Observado y Rechazado.
+Permite activar o desactivar
+documentos y mantener
+trazabilidad completa de
+cada proyecto de tesis o pre-
+tesis.
+Consulta inteligente
+mediante Retrieval-
+Augmented Generation
+(RAG) con modelos locales.
+Los usuarios pueden realizar
+preguntas sobre
+documentos académicos y
+acceder al historial completo
+de conversaciones.
+Panel centralizado con
+métricas clave: cantidad de
+tesis y pre-tesis por estado,
+actividad reciente y
+estadísticas del sistema.
+Facilita la toma de
+decisiones para docentes,
+asesores y encargados.
+G E S T I Ó N  D E  E S T A D O S
+C O N S U L T A  I A  ( R A G )
+D A S H B O A R D\n===== SLIDE 7 =====\nDiagrama de Arquitectura\n===== SLIDE 8 =====\nMODELO MER\n===== SLIDE 9 =====\n• Aprovecha infraestructura local existente: Se integra con los servidores y
+recursos tecnológicos actuales de TECSUP sin inversión adicional en servicios
+externos.
+• Mejora trazabilidad y eficiencia operativa: Control de estados, historial de
+consultas y dashboard permiten un seguimiento preciso y reducen procesos
+manuales en la gestión académica.
+• Sin dependencia de nube externa: El sistema opera en la red privada institucional
+de TECSUP, garantizando autonomía tecnológica y protección de datos académicos
+sensibles.
+• Reduce tiempos de revisión documental: La centralización y el acceso rápido a
+tesis y pre-tesis optimizan el trabajo de docentes, asesores y encargados.
+Sostenibilidad Institucional\n===== SLIDE 10 =====\nGantt
+https://docs.google.com/spreadsheets/d/1qBQamxR1ksbx8Gh3xylRNpPtHZwONb9yNZQ0-FQd-z8/edit?usp=sharing\n===== SLIDE 11 =====\nConclusiones:
+• Centralización efectiva de la gestión documental de tesis y pre-tesis.
+• IA local garantiza consultas seguras, privadas y rápidas.
+• Dashboard mejora el seguimiento y trazabilidad de proyectos.
+• Reducción significativa de procesos manuales para docentes.
+Recomendaciones:
+• Validar el sistema con docentes, asesores y encargados.
+• Mantener la base documental actualizada periódicamente.
+• Ampliar métricas de seguimiento en el dashboard.
+• Preparar video demo como material de respaldo institucional.
+Conclusiones yRecomendaciones\n===== SLIDE 12 =====\nTecSis-IA: Innovación en gestión
+académica · TECSUP 2026
+¡Gracias por su atención!

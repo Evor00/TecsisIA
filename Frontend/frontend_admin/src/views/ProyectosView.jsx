@@ -84,10 +84,10 @@ function DetalleTesisModal({ proyecto: p, onClose }) {
   const ec = estadoColors[p.estado] ?? estadoColors.aprobado
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center"
+    <div className="academic-modal fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-lg rounded-2xl flex flex-col"
+      <div className="academic-modal__surface w-full max-w-lg rounded-2xl flex flex-col"
         style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '85vh' }}>
 
         {/* Header con gradiente */}
@@ -315,65 +315,65 @@ function EditarProyectoModal({ proyecto, onClose, onUpdated }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="academic-modal fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      <div className="academic-modal__surface relative w-full max-w-2xl rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
+        <div className="academic-modal__header flex items-center justify-between px-6 py-4 border-b">
           <h3 className="font-semibold text-slate-800">Editar Proyecto</h3>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-50 rounded-lg"><X size={18} /></button>
+          <button onClick={onClose} className="academic-modal__close p-2 rounded-lg"><X size={18} /></button>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-5">
+        <div className="academic-modal__body p-6 overflow-y-auto space-y-5">
           {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
 
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Ttulo del Proyecto</label>
-            <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.titulo} onChange={e => setForm({...form, titulo: e.target.value})} />
+          <div className="academic-form-field">
+            <label className="block text-xs font-medium mb-1">Título del Proyecto</label>
+            <input className="academic-input w-full px-3 py-2 rounded-lg text-sm" value={form.titulo} onChange={e => setForm({...form, titulo: e.target.value})} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Autor(es)</label>
-              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.autor} onChange={e => setForm({...form, autor: e.target.value})} />
+            <div className="academic-form-field">
+              <label className="block text-xs font-medium mb-1">Autor(es)</label>
+              <input className="academic-input w-full px-3 py-2 rounded-lg text-sm" value={form.autor} onChange={e => setForm({...form, autor: e.target.value})} />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Grupo / Seccin</label>
-              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.grupo} onChange={e => setForm({...form, grupo: e.target.value})} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Cdigo (Opcional)</label>
-              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.codigo} onChange={e => setForm({...form, codigo: e.target.value})} />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Promocin</label>
-              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.promocion} onChange={e => setForm({...form, promocion: e.target.value})} />
+            <div className="academic-form-field">
+              <label className="block text-xs font-medium mb-1">Grupo / Sección</label>
+              <input className="academic-input w-full px-3 py-2 rounded-lg text-sm" value={form.grupo} onChange={e => setForm({...form, grupo: e.target.value})} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Estado</label>
-              <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.estado} onChange={e => setForm({...form, estado: e.target.value})}>
+            <div className="academic-form-field">
+              <label className="block text-xs font-medium mb-1">Código (opcional)</label>
+              <input className="academic-input w-full px-3 py-2 rounded-lg text-sm" value={form.codigo} onChange={e => setForm({...form, codigo: e.target.value})} />
+            </div>
+            <div className="academic-form-field">
+              <label className="block text-xs font-medium mb-1">Promoción</label>
+              <input className="academic-input w-full px-3 py-2 rounded-lg text-sm" value={form.promocion} onChange={e => setForm({...form, promocion: e.target.value})} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="academic-form-field">
+              <label className="block text-xs font-medium mb-1">Estado</label>
+              <select className="academic-input w-full px-3 py-2 rounded-lg text-sm" value={form.estado} onChange={e => setForm({...form, estado: e.target.value})}>
                 <option value="en-revision">En Revisión</option>
                 <option value="aprobado">Aprobado</option>
                 <option value="observado">Observado</option>
                 <option value="rechazado">Rechazado</option>
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Calificacin / Score (Opcional)</label>
-              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" value={form.score} onChange={e => setForm({...form, score: e.target.value})} />
+            <div className="academic-form-field">
+              <label className="block text-xs font-medium mb-1">Calificación / Score (opcional)</label>
+              <input className="academic-input w-full px-3 py-2 rounded-lg text-sm" value={form.score} onChange={e => setForm({...form, score: e.target.value})} />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tecnologas</label>
+          <div className="academic-form-field">
+            <label className="block text-xs font-medium mb-1">Tecnologías</label>
             <div className="flex gap-2 mb-2">
-              <input className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Ej. React, Python..." value={techInput} onChange={e=>setTechInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addTech()} />
-              <button onClick={()=>addTech()} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Agregar</button>
+              <input className="academic-input flex-1 px-3 py-2 rounded-lg text-sm" placeholder="Ej. React, Python..." value={techInput} onChange={e=>setTechInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addTech()} />
+              <button onClick={()=>addTech()} className="academic-secondary-button px-4 py-2 rounded-lg text-sm font-medium">Agregar</button>
             </div>
             <div className="flex flex-wrap gap-2">
               {form.tecnologias.map(t => (
@@ -384,14 +384,14 @@ function EditarProyectoModal({ proyecto, onClose, onUpdated }) {
             </div>
           </div>
           
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Resumen (Actualiza el 1er chunk)</label>
-            <textarea className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm min-h-[100px]" value={form.resumen} onChange={e => setForm({...form, resumen: e.target.value})} />
+          <div className="academic-form-field">
+            <label className="block text-xs font-medium mb-1">Resumen (actualiza el primer fragmento)</label>
+            <textarea className="academic-input w-full px-3 py-2 rounded-lg text-sm min-h-[100px]" value={form.resumen} onChange={e => setForm({...form, resumen: e.target.value})} />
           </div>
         </div>
 
-        <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl">
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg">Cancelar</button>
+        <div className="academic-modal__footer p-4 border-t flex justify-end gap-3 rounded-b-2xl">
+          <button onClick={onClose} className="academic-secondary-button px-4 py-2 text-sm font-medium rounded-lg">Cancelar</button>
           <button onClick={handleUpdate} disabled={saving || !form.titulo || !form.autor} className="px-6 py-2 bg-[#4f46e5] hover:bg-[#4338ca] text-white text-sm font-medium rounded-lg disabled:opacity-50">
             {saving ? 'Guardando...' : 'Guardar Cambios'}
           </button>
@@ -580,10 +580,10 @@ function RegistrarProyectoModal({ onClose, onCreated }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center"
+    <div className="academic-modal fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-lg rounded-2xl flex flex-col"
+      <div className="academic-modal__surface w-full max-w-lg rounded-2xl flex flex-col"
         style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '92vh' }}>
 
         {/* Header */}

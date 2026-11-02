@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.test import SimpleTestCase, override_settings
 
@@ -70,6 +70,33 @@ class RAGHelpersTests(SimpleTestCase):
         answer = llm_client.generate_answer('Consulta sin coincidencias', [])
 
         self.assertIn('No encontré proyectos', answer)
+
+    @override_settings(OPENWEBUI_TOKEN='token-de-prueba', OPENWEBUI_URL='http://192.168.17.11:3000')
+    @patch('rag_api.llm_client.httpx.get')
+    def test_community_openwebui_models_uses_v1_endpoint(self, mock_get):
+        response = Mock(status_code=200)
+        response.json.return_value = {
+            'data': [{'id': 'Qwen/Qwen3.6-35B-A3B-FP8', 'name': 'Qwen 3.6'}],
+        }
+        mock_get.return_value = response
+
+        models = llm_client.get_available_models()
+
+        self.assertEqual(models, [{'id': 'Qwen/Qwen3.6-35B-A3B-FP8', 'name': 'Qwen 3.6'}])
+        self.assertEqual(mock_get.call_args.args[0], 'http://192.168.17.11:3000/api/v1/models')
+
+    @override_settings(OPENWEBUI_TOKEN='token-de-prueba', OPENWEBUI_URL='http://192.168.17.11:3000')
+    @patch('rag_api.llm_client.httpx.get')
+    def test_model_discovery_falls_back_to_legacy_endpoint(self, mock_get):
+        not_found = Mock(status_code=404)
+        success = Mock(status_code=200)
+        success.json.return_value = {'data': [{'id': 'modelo-legado'}]}
+        mock_get.side_effect = [not_found, success]
+
+        models = llm_client.get_available_models()
+
+        self.assertEqual(models, [{'id': 'modelo-legado', 'name': 'modelo-legado'}])
+        self.assertEqual(mock_get.call_args.args[0], 'http://192.168.17.11:3000/api/models')
 
     def test_vector_results_below_threshold_are_not_evidence(self):
         documentos = _documentos_vectoriales([

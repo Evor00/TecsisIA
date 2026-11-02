@@ -1339,12 +1339,8 @@ class StatusView(APIView):
         modelo = getattr(settings, 'OPENWEBUI_MODEL', '')
         
         if getattr(settings, 'OPENWEBUI_TOKEN', ''):
-            try:
-                resp = httpx.get(f'{url}/api/models', headers={'Authorization': f'Bearer {settings.OPENWEBUI_TOKEN}'}, timeout=2.0)
-                if resp.status_code == 200:
-                    return Response({'online': True, 'modo': 'ia', 'url': url, 'modelo': modelo, 'mensaje': 'La BestIA conectada'})
-            except Exception:
-                pass
+            if llm_client.get_available_models(timeout=2.0):
+                return Response({'online': True, 'modo': 'ia', 'url': url, 'modelo': modelo, 'mensaje': 'La BestIA conectada'})
 
         if gemini_configurado:
             return Response({'online': True, 'modo': 'ia_cloud', 'url': 'Nube (Gemini)', 'modelo': 'gemini-3.6-flash', 'mensaje': 'Usando Gemini'})
@@ -1370,25 +1366,12 @@ class ModelosView(APIView):
                 {'id': 'local-rag', 'name': 'RAG Local (sin IA)'},
             ], 'online': False})
 
-        try:
-            resp = httpx.get(
-                f'{settings.OPENWEBUI_URL}/api/models',
-                headers={'Authorization': f'Bearer {settings.OPENWEBUI_TOKEN}'},
-                timeout=5.0,
-            )
-            if resp.status_code != 200:
-                raise Exception('no 200')
-            data = resp.json()
-            raw  = data.get('data', [])
-            modelos = [
-                {'id': m.get('id', ''), 'name': m.get('name', m.get('id', ''))}
-                for m in raw
-            ]
+        modelos = llm_client.get_available_models()
+        if modelos:
             return Response({'modelos': modelos, 'online': True})
-        except Exception:
-            return Response({'modelos': [
-                {'id': 'local-rag', 'name': 'RAG Local (sin IA)'},
-            ], 'online': False})
+        return Response({'modelos': [
+            {'id': 'local-rag', 'name': 'RAG Local (sin IA)'},
+        ], 'online': False})
 
 
 class RAGStreamView(APIView):
@@ -1571,21 +1554,10 @@ class AdminModelosView(APIView):
         }
 
         if settings.OPENWEBUI_TOKEN:
-            try:
-                resp = httpx.get(
-                    f'{settings.OPENWEBUI_URL}/api/models',
-                    headers={'Authorization': f'Bearer {settings.OPENWEBUI_TOKEN}'},
-                    timeout=5.0,
-                )
-                if resp.status_code == 200:
-                    raw = resp.json().get('data', [])
-                    config_actual['modelos_disponibles'] = [
-                        {'id': m.get('id',''), 'name': m.get('name', m.get('id',''))}
-                        for m in raw
-                    ]
-                    config_actual['online'] = True
-            except Exception:
-                pass
+            modelos = llm_client.get_available_models()
+            if modelos:
+                config_actual['modelos_disponibles'] = modelos
+                config_actual['online'] = True
 
         try:
             total_tokens = LogConsulta.objects.aggregate(

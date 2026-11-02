@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react'
-import { Bell, BookMarked, CheckCircle2, ChevronRight, FileText, FolderOpen, Globe, Shield, TrendingUp, User, XCircle, Cpu, Zap, RefreshCw, Save } from 'lucide-react'
+import { Bell, BookMarked, CheckCircle2, ChevronRight, FileText, FolderOpen, Globe, Shield, TrendingUp, User, XCircle, Cpu, Zap, RefreshCw, Save, Moon, Sun } from 'lucide-react'
 import { apiFetch } from '../services/api'
 import { PageBreadcrumb } from '../components/common'
 
@@ -13,7 +13,7 @@ const PERFIL_FALLBACK = {
   stats: { consultas_rag: 0, proyectos_revisados: 0, alertas_emitidas: 0, tesis_indexadas: 0 },
 }
 
-function PerfilView() {
+function PerfilView({ theme, onToggleTheme }) {
   const [activeTab, setActiveTab] = useState('info')
   const [form, setForm]           = useState(PERFIL_FALLBACK)
   const [original, setOriginal]   = useState(PERFIL_FALLBACK)
@@ -275,6 +275,40 @@ function PerfilView() {
             )}
             {activeTab === 'sys' && (
               <div className="space-y-4 mb-4">
+                {/* Apariencia */}
+                <div className="rounded-xl p-6"
+                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.25),rgba(139,92,246,0.16))', color: '#818cf8' }}>
+                        {theme === 'dark' ? <Moon size={17} /> : <Sun size={17} />}
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-semibold text-gray-900">Apariencia</h2>
+                        <p className="text-xs mt-0.5" style={{ color: 'rgba(0,0,0,0.45)' }}>
+                          Usa el modo {theme === 'dark' ? 'oscuro' : 'claro'} en toda la aplicación.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={theme === 'dark'}
+                      aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                      onClick={onToggleTheme}
+                      className="relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+                      style={{ background: theme === 'dark' ? '#4f46e5' : '#cbd5e1' }}>
+                      <span className="sr-only">Cambiar tema</span>
+                      <span
+                        className="inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow-sm transition-transform"
+                        style={{ transform: theme === 'dark' ? 'translateX(24px)' : 'translateX(4px)' }}>
+                        {theme === 'dark' ? <Moon size={11} style={{ color: '#4f46e5' }} /> : <Sun size={11} style={{ color: '#f59e0b' }} />}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Descripción del sistema */}
                 <div className="rounded-xl p-6"
                   style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
