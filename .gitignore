@@ -11,6 +11,26 @@ coverage/
 htmlcov/
 *.log
 
+# Artefactos locales y scripts auxiliares de generación/parche
+/output/
+/tmp/
+/build_anexo.py
+/build_guiones_expo.py
+/create_tabla_tecnologias.py
+/Backend/add_col.py
+/Backend/apply_patch_conv.py
+/Backend/check_*.py
+/Backend/check_convs.py
+/Backend/extract_modal*.py
+/Backend/fix_*.py
+/Backend/generar_pdf.py
+/Backend/generar_xml.py
+/Backend/list_gemini_models.py
+/Backend/modal_code.txt
+/Backend/test_conv_created.py
+/Backend/test_gemini*.py
+/Backend/test_rag.py
+
 # Archivos generados para presentacion/documentacion
 Diagrama_Gantt_TecSisIA.xlsx
 ESTUDIO_CODIGO.md
